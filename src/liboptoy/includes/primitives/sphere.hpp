@@ -6,8 +6,9 @@
 namespace optoy {
 template<class TScalar>
 struct sphere {
-    vector4d<TScalar> origin;
-    TScalar radius;
+    const TScalar radius;
+    const TScalar z_min, z_max;
+    const TScalar theta_min, theta_max, phi_max;
 };
 
 using sphere_f = sphere<float>;
