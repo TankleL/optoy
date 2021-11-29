@@ -72,6 +72,9 @@ inline TVec4 normalize_4as3(TVec4&& src) {
     return TVec4(src(0) / len, src(1) / len, src(2) / len, src(3));
 }
 
+class efloat {
+};
+
 } // namespace optoy
 
 #endif // !OPTOY_MATHDEF_H

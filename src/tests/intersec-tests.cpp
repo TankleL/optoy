@@ -22,3 +22,4 @@ TEST(intersec_test, sphere0) {
     };
     auto res = otg::ds_f<ot::sphere_f>::intersects(unit_sphere, ray);
 }
+

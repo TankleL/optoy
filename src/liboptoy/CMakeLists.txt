@@ -10,6 +10,7 @@ set(LIBOPTOY_HEADER_FILES
     includes/primitives/intersec.hpp
     includes/primitives/ray.hpp
     includes/primitives/sphere.hpp
+    includes/core/threadpool.hpp
 )
 
 set(LIBOPTOY_SOURCE_FILES

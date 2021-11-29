@@ -7,5 +7,6 @@
 #include "interfaces/icamera.hpp"
 #include "interfaces/iscene.hpp"
 #include "integrators/pathint.hpp"
+#include "core/threadpool.hpp"
 
 #endif // !OPTOY_HEADER_FILES

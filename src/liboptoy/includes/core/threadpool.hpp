@@ -1,0 +1,79 @@
+#ifndef OPTOY_THREADPOOL_H
+#define OPTOY_THREADPOOL_H
+
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <queue>
+#include <thread>
+
+namespace optoy {
+template<size_t _ThreadCount>
+class static_thread_pool {
+public:
+    static_thread_pool();
+    static_thread_pool(static_thread_pool&&) = default;
+    static_thread_pool(const static_thread_pool&) = delete;
+    ~static_thread_pool();
+    
+    template<class F>
+    void execute(F&& task);
+
+private:
+    struct ctrl_block {
+        std::mutex mtx;
+        std::condition_variable cond;
+        bool shutdown = false;
+        std::queue<std::function<void()>> tasks;
+    };
+    std::shared_ptr<ctrl_block> _ctrl_block;
+};
+
+template<size_t _ThreadCount>
+inline static_thread_pool<_ThreadCount>::static_thread_pool()
+    : _ctrl_block(std::make_shared<static_thread_pool<_ThreadCount>::ctrl_block>()) {
+    for (size_t i = 0; i < _ThreadCount; ++i) {
+        std::thread([cb = _ctrl_block]() {
+            std::unique_lock<std::mutex> lock(cb->mtx);
+            for (;;) {
+                if (!cb->tasks.empty()) {
+                    auto cur = std::move(cb->tasks.front());
+                    cb->tasks.pop();
+                    lock.unlock();
+                    cur();
+                    lock.lock();
+                }
+                else if (cb->shutdown) {
+                    break;
+                }
+                else {
+                    cb->cond.wait(lock);
+                }
+            }
+        }).detach();
+    }
+}
+
+template<size_t _ThreadCount>
+inline static_thread_pool<_ThreadCount>::~static_thread_pool() {
+    if ((bool)_ctrl_block) {
+        {
+            std::scoped_lock<std::mutex> lock(_ctrl_block->mtx);
+            _ctrl_block->shutdown = true;
+        }
+        _ctrl_block->cond.notify_all();
+    }
+}
+
+template<size_t _ThreadCount>
+template<class F>
+inline void static_thread_pool<_ThreadCount>::execute(F&& task) {
+    {
+        std::scoped_lock<std::mutex> lock(_ctrl_block->mtx);
+        _ctrl_block->tasks.emplace(std::forward<F>(task));
+    }
+    _ctrl_block->cond.notify_one();
+}
+} // namespace optoy
+
+#endif // !OPTOY_THREADPOOL_H
