@@ -8,8 +8,8 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{d7205d4a-8886-4929-9670-351a71d94476}</ProjectGuid>
-    <ProjectName>RayDbg</ProjectName>
-    <RootNamespace>RayDbg</RootNamespace>
+    <ProjectName>raydbg</ProjectName>
+    <RootNamespace>raydbg</RootNamespace>
     <!--
       $(TargetName) should be same as $(RootNamespace) so that the produced binaries (.exe/.pri/etc.)
       have a name that matches the .winmd

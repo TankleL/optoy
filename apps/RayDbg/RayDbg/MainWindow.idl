@@ -1,4 +1,4 @@
-namespace RayDbg
+namespace raydbg
 {
     [default_interface]
     runtimeclass MainWindow : Microsoft.UI.Xaml.Window

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RayDbg", "RayDbg\RayDbg.vcxproj", "{D7205D4A-8886-4929-9670-351A71D94476}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "raydbg", "raydbg\raydbg.vcxproj", "{D7205D4A-8886-4929-9670-351A71D94476}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

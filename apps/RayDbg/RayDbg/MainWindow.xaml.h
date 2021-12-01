@@ -2,7 +2,7 @@
 
 #include "MainWindow.g.h"
 
-namespace winrt::RayDbg::implementation
+namespace winrt::raydbg::implementation
 {
     struct MainWindow : MainWindowT<MainWindow>
     {
@@ -15,7 +15,7 @@ namespace winrt::RayDbg::implementation
     };
 }
 
-namespace winrt::RayDbg::factory_implementation
+namespace winrt::raydbg::factory_implementation
 {
     struct MainWindow : MainWindowT<MainWindow, implementation::MainWindow>
     {

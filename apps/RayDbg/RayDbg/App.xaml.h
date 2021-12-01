@@ -2,7 +2,7 @@
 
 #include "App.xaml.g.h"
 
-namespace winrt::RayDbg::implementation
+namespace winrt::raydbg::implementation
 {
     struct App : AppT<App>
     {
