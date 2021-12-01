@@ -1,0 +1,9 @@
+namespace raydbg
+{
+    [default_interface]
+    runtimeclass MasterViewer : Windows.UI.Xaml.Controls.UserControl
+    {
+        MasterViewer();
+        Int32 MyProperty;
+    }
+}
