@@ -110,6 +110,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DeviceResources.h" />
+    <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="MasterViewer.h">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -148,6 +150,7 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="MasterViewer.cpp">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
