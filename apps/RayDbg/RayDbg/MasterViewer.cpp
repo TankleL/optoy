@@ -12,6 +12,7 @@ namespace winrt::raydbg::implementation
     MasterViewer::MasterViewer()
     {
         InitializeComponent();
+        _devres.set_swapchainpanel(swapchainpanel());
     }
 
     int32_t MasterViewer::MyProperty()

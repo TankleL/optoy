@@ -15,6 +15,9 @@ namespace winrt::raydbg::implementation
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
+
+    private:
+        dx::DeviceResources _devres;
     };
 }
 
@@ -22,7 +25,5 @@ namespace winrt::raydbg::factory_implementation
 {
     struct MasterViewer : MasterViewerT<MasterViewer, implementation::MasterViewer>
     {
-    private:
-        dx::DeviceResources _devres;
     };
 }

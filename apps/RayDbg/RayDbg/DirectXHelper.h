@@ -24,5 +24,10 @@ namespace dx {
 			winrt::throw_hresult(hr);
 		}
 	}
+
+	inline float convert_dips_to_pixels(float dips, float dpi) {
+		constexpr float dips_per_inch = 96.0f;
+		return std::floorf(dips * dpi / dips_per_inch + 0.5f); // round to the nearest integer
+	}
 }
 
