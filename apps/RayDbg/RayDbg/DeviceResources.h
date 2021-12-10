@@ -6,12 +6,17 @@ namespace dx {
 	{
 	public:
 		DeviceResources();
+		void set_dpi(float dpi);
+		void set_logical_size(winrt::Windows::Foundation::Size size);
+		void validate_device();
+		void handle_device_lost();
+		void set_composition_scale(float scale_x, float scale_y);
 		void set_swapchainpanel(winrt::Windows::UI::Xaml::Controls::SwapChainPanel panel);
 
 	private:
-		void _create_dires(); // create device independent resources
-		void _create_ddres(); // create device dependent resources
-		void _ensure_wsdres(); // create window size dependent resources
+		void _reset_dires(); // create device independent resources
+		void _reset_ddres(); // create device dependent resources
+		void _reset_wsdres(); // reset window size dependent resources
 		void _update_rtsize(); // update render target size
 
 	private:
@@ -32,6 +37,11 @@ namespace dx {
 		float _effective_composition_scale_x;
 		float _effective_composition_scale_y;
 		float _effective_dpi;
+
+	private:
+		constexpr static inline float _dpi_threshold = 192.f;
+		constexpr static inline float _width_threshold = 1920.f;
+		constexpr static inline float _height_threshold = 1080.f;
 	};
 }
 

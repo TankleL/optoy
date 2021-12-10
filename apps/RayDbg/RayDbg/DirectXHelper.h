@@ -29,5 +29,10 @@ namespace dx {
 		constexpr float dips_per_inch = 96.0f;
 		return std::floorf(dips * dpi / dips_per_inch + 0.5f); // round to the nearest integer
 	}
+
+	template<class T>
+	inline bool equals(T a, T b) {
+		return std::islessequal(std::abs(a - b), std::numeric_limits<T>::epsilon());
+	}
 }
 

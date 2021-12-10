@@ -6,8 +6,78 @@ namespace dx {
     DeviceResources::DeviceResources()
         : _screenviewport()
         , _d3dfeaturelevel(D3D_FEATURE_LEVEL_11_1) {
-        _create_dires();
-        _create_ddres();
+        _reset_dires();
+        _reset_ddres();
+    }
+
+    void DeviceResources::set_dpi(float dpi) {
+        if (_dpi != dpi) {
+            _dpi = dpi;
+            _reset_wsdres();
+        }
+    }
+    
+    void DeviceResources::set_logical_size(winrt::Windows::Foundation::Size size) {
+        if (_logical_size != size) {
+            _logical_size = size;
+            _reset_wsdres();
+        }
+    }
+
+    void DeviceResources::validate_device() {
+        auto dxgi_dev = _d3ddevice.as<IDXGIDevice3>();
+
+        winrt::com_ptr<IDXGIAdapter> adapter;
+        dx::throw_if_failed(dxgi_dev->GetAdapter(adapter.put()));
+
+        winrt::com_ptr<IDXGIFactory2> factory;
+        dx::throw_if_failed(adapter->GetParent(IID_PPV_ARGS(factory.put())));
+
+        winrt::com_ptr<IDXGIAdapter1> prev_default_adapter;
+        dx::throw_if_failed(factory->EnumAdapters1(0, prev_default_adapter.put()));
+
+        DXGI_ADAPTER_DESC1 prev_desc;
+        dx::throw_if_failed(prev_default_adapter->GetDesc1(&prev_desc));
+
+        winrt::com_ptr<IDXGIFactory4> curr_factory;
+        dx::throw_if_failed(CreateDXGIFactory1(IID_PPV_ARGS(curr_factory.put())));
+
+        winrt::com_ptr<IDXGIAdapter1> curr_default_adapter;
+        dx::throw_if_failed(curr_factory->EnumAdapters1(0, curr_default_adapter.put()));
+
+        DXGI_ADAPTER_DESC1 curr_desc;
+        dx::throw_if_failed(curr_default_adapter->GetDesc1(&curr_desc));
+
+        // if the adapter LUIDs don't match, or if the device reports that it has been removed,
+        // a new D3D device must be created.
+        if (prev_desc.AdapterLuid.LowPart != curr_desc.AdapterLuid.LowPart ||
+            prev_desc.AdapterLuid.HighPart != curr_desc.AdapterLuid.HighPart ||
+            FAILED(_d3ddevice->GetDeviceRemovedReason())) {
+            // release all the references to the resources related to the outdated device.
+            dxgi_dev = nullptr;
+            adapter = nullptr;
+            factory = nullptr;
+            prev_default_adapter = nullptr;
+            // create a new device and a swapchain.
+            handle_device_lost();
+        }
+    }
+
+    void DeviceResources::handle_device_lost() {
+        _swapchain = nullptr;
+        // TODO: notify device is lost
+        _reset_ddres();
+        _reset_wsdres();
+        // TODO: notify device is restored
+    }
+
+    void DeviceResources::set_composition_scale(float scale_x, float scale_y) {
+        if (!dx::equals(_composition_scale_x, scale_x) ||
+            !dx::equals(_composition_scale_y, scale_y)) {
+            _composition_scale_x = scale_x;
+            _composition_scale_y = scale_y;
+            _reset_wsdres();
+        }
     }
 
     void DeviceResources::set_swapchainpanel(winrt::Windows::UI::Xaml::Controls::SwapChainPanel panel) {
@@ -19,13 +89,13 @@ namespace dx {
         _composition_scale_x = panel.CompositionScaleX();
         _composition_scale_y = panel.CompositionScaleY();
         _dpi = dinfo.LogicalDpi();
-        _ensure_wsdres();
+        _reset_wsdres();
     }
 
-    void DeviceResources::_create_dires() {
+    void DeviceResources::_reset_dires() {
     }
 
-    void DeviceResources::_create_ddres() {
+    void DeviceResources::_reset_ddres() {
         // This flag adds support for surfaces with a different color channel ordering
         // than the API default. It is required for compatibility with Direct2D.
         uint32_t creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
@@ -82,7 +152,7 @@ namespace dx {
         _d3dcontext = ctx.as<ID3D11DeviceContext4>();
     }
 
-    void DeviceResources::_ensure_wsdres() {
+    void DeviceResources::_reset_wsdres() {
         // clear the previous context that is specific for window size resources
         ID3D11RenderTargetView* nullviews[] = { nullptr };
         _d3dcontext->OMSetRenderTargets(ARRAYSIZE(nullviews), nullviews, nullptr);
@@ -102,11 +172,11 @@ namespace dx {
                 0);
 
             if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-                // _handle_device_lost();
+                handle_device_lost();
                 return;
             }
             else {
-                winrt::throw_hresult(hr);
+                dx::throw_if_failed(hr);
             }
         }
         else {
@@ -203,6 +273,16 @@ namespace dx {
         _effective_composition_scale_y = _composition_scale_y;
 
         // todo: to save better life, associate _effective** with their ideal factors using a mapping of linear relationships
+        if (_dpi > _dpi_threshold) {
+            const auto w = dx::convert_dips_to_pixels(_logical_size.Width, _dpi);
+            const auto h = dx::convert_dips_to_pixels(_logical_size.Height, _dpi);
+            if (std::max(w, h) > _width_threshold &&
+                std::min(w, h) > _height_threshold) {
+                _effective_dpi /= 2.0f;
+                _effective_composition_scale_x /= 2.0f;
+                _effective_composition_scale_y /= 2.0f;
+            }
+        }
 
         _output_size.Width = dx::convert_dips_to_pixels(_logical_size.Width, _effective_dpi);
         _output_size.Height = dx::convert_dips_to_pixels(_logical_size.Height, _effective_dpi);
