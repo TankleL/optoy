@@ -4,8 +4,12 @@
     <ApplicationDefinition Include="App.xaml" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="MainPage.xaml" />
-    <Page Include="MasterViewer.xaml" />
+    <Page Include="MasterViewer.xaml">
+      <Filter>Controls</Filter>
+    </Page>
+    <Page Include="MainPage.xaml">
+      <Filter>Views</Filter>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl" />
@@ -28,7 +32,15 @@
     <ClInclude Include="DirectXHelper.h">
       <Filter>DX</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsRenderThread.h" />
+    <ClInclude Include="GraphicsEntities.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="IOUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsRenderThread.h">
+      <Filter>Views</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">
@@ -62,6 +74,21 @@
     </Filter>
     <Filter Include="DX">
       <UniqueIdentifier>{6d1e0775-4415-49c7-ae90-b848d6e1b3b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entities">
+      <UniqueIdentifier>{cdbe11ba-9fa3-4f2c-ae80-021b269c939e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controls">
+      <UniqueIdentifier>{2517ba75-1caa-4813-a173-1bac1f350210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Views">
+      <UniqueIdentifier>{cc5a45fe-5f20-4deb-9e13-0a1d440fc38b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{af5c46a7-9ee0-4363-ba20-b0e2e832aa78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ViewModels">
+      <UniqueIdentifier>{36a62aa7-65e3-42ad-8087-e53799136ee8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

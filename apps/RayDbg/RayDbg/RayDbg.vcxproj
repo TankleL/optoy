@@ -112,7 +112,9 @@
   <ItemGroup>
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DirectXHelper.h" />
+    <ClInclude Include="GraphicsEntities.h" />
     <ClInclude Include="GraphicsRenderThread.h" />
+    <ClInclude Include="IOUtils.h" />
     <ClInclude Include="MasterViewer.h">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
