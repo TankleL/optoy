@@ -28,6 +28,7 @@
     <ClInclude Include="DirectXHelper.h">
       <Filter>DX</Filter>
     </ClInclude>
+    <ClInclude Include="GraphicsRenderThread.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Wide310x150Logo.scale-200.png">

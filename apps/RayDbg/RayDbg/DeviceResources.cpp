@@ -92,6 +92,20 @@ namespace dx {
         _reset_wsdres();
     }
 
+    void DeviceResources::present() {
+        DXGI_PRESENT_PARAMETERS params{ 0 };
+        const auto hr = _swapchain->Present1(1, 0, &params);
+        _d3dcontext->DiscardView1(_d3drtview.get(), nullptr, 0);
+        _d3dcontext->DiscardView1(_d3ddsview.get(), nullptr, 0);
+
+        if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+            handle_device_lost();
+        }
+        else {
+            dx::throw_if_failed(hr);
+        }
+    }
+
     void DeviceResources::_reset_dires() {
     }
 

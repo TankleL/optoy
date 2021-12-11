@@ -6,6 +6,7 @@
 #include "winrt/Windows.UI.Xaml.Controls.Primitives.h"
 #include "MasterViewer.g.h"
 #include "DeviceResources.h"
+#include "GraphicsRenderThread.h"
 
 namespace winrt::raydbg::implementation
 {
@@ -21,9 +22,12 @@ namespace winrt::raydbg::implementation
         void _on_swapchain_size_changed(winrt::Windows::UI::Xaml::SizeChangedEventArgs args);
         void _on_display_content_invalidated();
         void _on_composition_scale_changed(winrt::Windows::UI::Xaml::Controls::SwapChainPanel panel);
+        void _on_loaded();
+        void _on_unloaded();
 
     private:
-        dx::DeviceResources _devres;
+        dx::DeviceResources _dxres;
+        GraphicsRenderThread _graphics;
     };
 }
 

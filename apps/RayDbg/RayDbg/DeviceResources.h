@@ -12,6 +12,11 @@ namespace dx {
 		void handle_device_lost();
 		void set_composition_scale(float scale_x, float scale_y);
 		void set_swapchainpanel(winrt::Windows::UI::Xaml::Controls::SwapChainPanel panel);
+		D3D11_VIEWPORT get_screen_viewport() const { return _screenviewport; };
+		ID3D11DeviceContext4* get_d3dcontext() const { return _d3dcontext.get(); };
+		ID3D11Device3* get_d3ddevice() const { return _d3ddevice.get(); }
+		ID3D11RenderTargetView1* get_back_render_target_view() const { return _d3drtview.get(); };
+		void present();
 
 	private:
 		void _reset_dires(); // create device independent resources

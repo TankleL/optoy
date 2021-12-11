@@ -7,6 +7,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 
 // Use the C++ standard templated min/max
