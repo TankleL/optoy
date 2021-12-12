@@ -27,6 +27,7 @@ namespace winrt::raydbg {
         std::unique_ptr<std::jthread> _worker;
         winrt::com_ptr<ID3D11VertexShader> _mainvs;
         winrt::com_ptr<ID3D11PixelShader> _mainps;
+        winrt::com_ptr<ID3D11InputLayout> _input_layout;
     };
 
     inline GraphicsRenderThread::GraphicsRenderThread(dx::DeviceResources* dxres)
@@ -68,13 +69,39 @@ namespace winrt::raydbg {
     inline void GraphicsRenderThread::_reset_device_resources() {
         auto* device = _dxres->get_d3ddevice();
 
-        // create vertex shader
-        auto code = dx::compile_shader(
+        // create a vertex shader
+        auto vsc= dx::compile_shader(
             shaders::main_vs,
             "main_vs",
             "main",
             "vs_5_0");
-        dx::throw_if_failed(device->CreateVertexShader(code->GetBufferPointer(), code->GetBufferSize(), nullptr, _mainvs.put()));
+        dx::throw_if_failed(device->CreateVertexShader(vsc->GetBufferPointer(), vsc->GetBufferSize(), nullptr, _mainvs.put()));
+
+        // create a pixel shader
+        auto psc = dx::compile_shader(
+            shaders::main_ps,
+            "main_ps",
+            "main",
+            "ps_5_0");
+        dx::throw_if_failed(device->CreatePixelShader(psc->GetBufferPointer(), psc->GetBufferSize(), nullptr, _mainps.put()));
+
+        // set up the input layout
+        D3D11_INPUT_ELEMENT_DESC input_ele_desc[] = {
+            { "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          /*
+          { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          */
+        };
+        dx::throw_if_failed(device->CreateInputLayout(
+            input_ele_desc,
+            ARRAYSIZE(input_ele_desc),
+            vsc->GetBufferPointer(),
+            vsc->GetBufferSize(),
+            _input_layout.put()));
+
+        // create a vertex buffer
     }
 
     inline void GraphicsRenderThread::_tick() {

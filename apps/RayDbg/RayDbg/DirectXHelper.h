@@ -46,7 +46,7 @@ namespace dx {
         const UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #endif
         winrt::com_ptr<ID3DBlob> code_blob, error_blob;
-        throw_if_failed(D3DCompile(
+        const auto hr = D3DCompile(
             shader_source.data(),
             shader_source.length(),
             source_name.length() > 0 ? source_name.data() : nullptr,
@@ -57,7 +57,14 @@ namespace dx {
             flags,
             0,
             code_blob.put(),
-            error_blob.put()));
+            error_blob.put());
+#if defined(DEBUG) || defined (_DEBUG)
+        if (FAILED(hr) && error_blob != nullptr) {
+            auto msg = static_cast<const char*>(error_blob->GetBufferPointer());
+            OutputDebugStringA(std::format("!!!! SHADER COMPILE ERROR: {0}", msg).c_str());
+        }
+#endif
+        throw_if_failed(hr);
         return code_blob;
     }
 }
