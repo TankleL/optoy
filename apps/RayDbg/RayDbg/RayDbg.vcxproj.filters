@@ -39,7 +39,16 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="GraphicsRenderThread.h">
-      <Filter>Views</Filter>
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="GCamera.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\main_ps.hlsl.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\main_vs.hlsl.h">
+      <Filter>Shaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -89,6 +98,12 @@
     </Filter>
     <Filter Include="ViewModels">
       <UniqueIdentifier>{36a62aa7-65e3-42ad-8087-e53799136ee8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graphics">
+      <UniqueIdentifier>{09577c54-af12-4732-8647-4013c108d6e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{db245dac-b235-476d-a2c5-b73435e5cc12}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -65,10 +65,10 @@ namespace dx {
 
     void DeviceResources::handle_device_lost() {
         _swapchain = nullptr;
-        // TODO: notify device is lost
+        _device_lost();
         _reset_ddres();
         _reset_wsdres();
-        // TODO: notify device is restored
+        _device_restored();
     }
 
     void DeviceResources::set_composition_scale(float scale_x, float scale_y) {
@@ -164,6 +164,7 @@ namespace dx {
         }
         _d3ddevice = dev.as<ID3D11Device3>();
         _d3dcontext = ctx.as<ID3D11DeviceContext4>();
+        _device_reset();
     }
 
     void DeviceResources::_reset_wsdres() {
@@ -227,12 +228,13 @@ namespace dx {
 
             _swapchain = swapchain.as<IDXGISwapChain3>();
 
-			// Associate swap chain with SwapChainPanel
+            // Associate swap chain with SwapChainPanel
             _swapchain_panel.Dispatcher().RunAsync(
                 winrt::Windows::UI::Core::CoreDispatcherPriority::High,
                 winrt::Windows::UI::Core::DispatchedHandler([=]() {
                     winrt::com_ptr<ISwapChainPanelNative> panel_native;
-                    dx::throw_if_failed(winrt::get_unknown(_swapchain_panel)->QueryInterface(IID_PPV_ARGS(&panel_native)));
+                    ISwapChainPanelNative** pnaddr = panel_native.put();
+                    dx::throw_if_failed(winrt::get_unknown(_swapchain_panel)->QueryInterface(IID_PPV_ARGS(pnaddr)));
                     dx::throw_if_failed(panel_native->SetSwapChain(_swapchain.get()));
                     }));
             dx::throw_if_failed(dxgi_dev->SetMaximumFrameLatency(1));
@@ -279,6 +281,7 @@ namespace dx {
             _d3drt_size.Height);
 
         _d3dcontext->RSSetViewports(1, &_screenviewport);
+        _window_size_reset();
     }
 
     void DeviceResources::_update_rtsize() {

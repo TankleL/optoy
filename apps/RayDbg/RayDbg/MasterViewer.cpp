@@ -26,18 +26,22 @@ namespace winrt::raydbg::implementation
     }
 
     void MasterViewer::_on_dpi_changed(winrt::Windows::Graphics::Display::DisplayInformation display_info) {
+        Concurrency::critical_section::scoped_lock lock(_graphics.get_operation_mutex());
         _dxres.set_dpi(display_info.LogicalDpi());
     }
 
     void MasterViewer::_on_swapchain_size_changed(winrt::Windows::UI::Xaml::SizeChangedEventArgs args) {
+        Concurrency::critical_section::scoped_lock lock(_graphics.get_operation_mutex());
         _dxres.set_logical_size(args.NewSize());
     }
 
     void MasterViewer::_on_display_content_invalidated() {
+        Concurrency::critical_section::scoped_lock lock(_graphics.get_operation_mutex());
         _dxres.validate_device();
     }
 
     void MasterViewer::_on_composition_scale_changed(winrt::Windows::UI::Xaml::Controls::SwapChainPanel panel) {
+        Concurrency::critical_section::scoped_lock lock(_graphics.get_operation_mutex());
         _dxres.set_composition_scale(panel.CompositionScaleX(), panel.CompositionScaleY());
     }
     

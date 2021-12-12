@@ -112,6 +112,7 @@
   <ItemGroup>
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DirectXHelper.h" />
+    <ClInclude Include="GCamera.h" />
     <ClInclude Include="GraphicsEntities.h" />
     <ClInclude Include="GraphicsRenderThread.h" />
     <ClInclude Include="IOUtils.h" />
@@ -126,6 +127,8 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Shaders\main_ps.hlsl.h" />
+    <ClInclude Include="Shaders\main_vs.hlsl.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">

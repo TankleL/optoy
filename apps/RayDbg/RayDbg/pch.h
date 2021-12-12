@@ -14,6 +14,7 @@
 #define NOMINMAX
 
 #include <d3d11_3.h>
+#include <d3dcompiler.h>
 #include <dxgi1_4.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
@@ -34,6 +35,8 @@
 #include <winrt/Windows.UI.Xaml.Markup.h>
 #include <winrt/Windows.UI.Xaml.Navigation.h>
 #include <windows.ui.xaml.media.dxinterop.h>
+#include <ppl.h>
+#include <ppltasks.h>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
