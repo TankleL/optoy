@@ -13,14 +13,14 @@ namespace winrt::raydbg::entities {
 
     template<class T>
     struct ray_t {
-        point_t o;
-        vector_t d;
+        point_t<T> o;
+        vector_t<T> d;
     };
 
     template<class T>
     struct line_segment_t {
-        point_t o;
-        vector_t d;
+        point_t<T> o;
+        vector_t<T> d;
         T tmin, tmax;
     };
 
@@ -33,6 +33,10 @@ namespace winrt::raydbg::entities {
     template<class T>
     struct transformation {
         T m[4][4];
+    };
+
+    struct vertex_t {
+        float x, y, z, w;
     };
 }
 

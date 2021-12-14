@@ -136,6 +136,7 @@
     </ClInclude>
     <ClInclude Include="Shaders\main_ps.hlsl.h" />
     <ClInclude Include="Shaders\main_vs.hlsl.h" />
+    <ClInclude Include="VisualLinePool.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">

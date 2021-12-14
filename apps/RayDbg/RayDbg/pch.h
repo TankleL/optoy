@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <queue>
 
 // Use the C++ standard templated min/max
 #define NOMINMAX

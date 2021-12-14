@@ -26,7 +26,6 @@ namespace winrt::raydbg::implementation
         void _on_unloaded();
 
     private:
-        dx::DeviceResources _dxres;
         GraphicsRenderThread _graphics;
     };
 }
