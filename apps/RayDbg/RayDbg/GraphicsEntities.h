@@ -34,9 +34,5 @@ namespace winrt::raydbg::entities {
     struct transformation {
         T m[4][4];
     };
-
-    struct vertex_t {
-        float x, y, z, w;
-    };
 }
 

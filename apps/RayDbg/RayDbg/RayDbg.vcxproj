@@ -120,6 +120,7 @@
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="GCamera.h" />
+    <ClInclude Include="GraphicsAlgo.h" />
     <ClInclude Include="GraphicsEntities.h" />
     <ClInclude Include="GraphicsRenderThread.h" />
     <ClInclude Include="IOUtils.h" />
@@ -134,8 +135,8 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Shaders\main_ps.hlsl.h" />
-    <ClInclude Include="Shaders\main_vs.hlsl.h" />
+    <ClInclude Include="Shaders\vlinepool_ps.hlsl.h" />
+    <ClInclude Include="Shaders\vlinepool_vs.hlsl.h" />
     <ClInclude Include="VisualLinePool.h" />
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,7 @@
 #include "MasterViewer.g.h"
 #include "DeviceResources.h"
 #include "GraphicsRenderThread.h"
+#include "VisualLinePool.h"
 
 namespace winrt::raydbg::implementation
 {
@@ -27,6 +28,7 @@ namespace winrt::raydbg::implementation
 
     private:
         GraphicsRenderThread _graphics;
+        VisualLinePool _linepool;
     };
 }
 

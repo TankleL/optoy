@@ -20,6 +20,12 @@ namespace winrt::raydbg::implementation
         swapchainpanel().SizeChanged([this](auto, auto args) { _on_swapchain_size_changed(args); });
         Loaded([this](auto, auto) { _on_loaded(); });
         Unloaded([this](auto, auto) { _on_unloaded(); });
+        auto& dxres = _graphics.get_device_resources();
+        dxres.set_swapchainpanel(swapchainpanel());
+        dxres.device_reset([this]() { _linepool.device_reset(_graphics.get_device_resources()); });
+        _graphics.drawing([this]() {
+            _linepool.draw(_graphics.get_device_resources());
+        });
     }
 
     void MasterViewer::_on_dpi_changed(winrt::Windows::Graphics::Display::DisplayInformation display_info) {
@@ -41,7 +47,9 @@ namespace winrt::raydbg::implementation
     }
     
     void MasterViewer::_on_loaded() {
-        _graphics.get_device_resources().set_swapchainpanel(swapchainpanel());
+        _graphics.dispatch([this](auto& g) {
+            _linepool.device_reset(g.get_device_resources()); // ensure the linepool has a correct device context.
+        });
         _graphics.run_async();
     }
 

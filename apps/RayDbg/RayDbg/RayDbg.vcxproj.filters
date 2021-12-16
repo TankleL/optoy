@@ -44,13 +44,16 @@
     <ClInclude Include="GCamera.h">
       <Filter>Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Shaders\main_ps.hlsl.h">
+    <ClInclude Include="Shaders\vlinepool_ps.hlsl.h">
       <Filter>Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Shaders\main_vs.hlsl.h">
+    <ClInclude Include="Shaders\vlinepool_vs.hlsl.h">
       <Filter>Shaders</Filter>
     </ClInclude>
     <ClInclude Include="VisualLinePool.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsAlgo.h">
       <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>

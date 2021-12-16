@@ -1,6 +1,6 @@
 #include <string_view>
 namespace winrt::raydbg::shaders {
-    constexpr inline std::string_view main_vs =
+    constexpr inline std::string_view vlinepool_vs =
         "struct vs_in {"                    "\n"
         "  float4 pos : POS;"               "\n"
         "};"                                "\n"
