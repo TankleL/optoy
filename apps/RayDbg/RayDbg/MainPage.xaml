@@ -2,9 +2,32 @@
     x:Class="raydbg.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:raydbg"
+    xmlns:raydbg="using:raydbg"
+    xmlns:ve="using:raydbg.ViewEntities"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <local:MasterViewer x:Name="master_viewer"/>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300"/>
+        </Grid.ColumnDefinitions>
+        <raydbg:MasterViewer x:Name="master_viewer"/>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="150"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.RayList, Mode=OneWay}">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="ve:LineSegment">
+                        <TextBlock>
+                            <Run Text="Ray "/>
+                            <Run Text="{x:Bind raydbg:StringUtils.GetString(ray)}"/>
+                        </TextBlock>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
 </Page>

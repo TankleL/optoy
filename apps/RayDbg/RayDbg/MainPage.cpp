@@ -5,20 +5,13 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::raydbg::implementation
-{
+namespace winrt::raydbg::implementation {
     MainPage::MainPage()
-    {
+        : _viewmodel(winrt::make<implementation::MainPageViewModel>()) {
         InitializeComponent();
     }
 
-    int32_t MainPage::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void MainPage::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
+    raydbg::MainPageViewModel MainPage::ViewModel() const {
+        return _viewmodel;
     }
 }

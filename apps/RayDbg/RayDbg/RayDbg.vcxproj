@@ -124,6 +124,7 @@
     <ClInclude Include="GraphicsEntities.h" />
     <ClInclude Include="GraphicsRenderThread.h" />
     <ClInclude Include="IOUtils.h" />
+    <ClInclude Include="MainPageViewModel.h" />
     <ClInclude Include="MasterViewer.h">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -137,6 +138,7 @@
     </ClInclude>
     <ClInclude Include="Shaders\vlinepool_ps.hlsl.h" />
     <ClInclude Include="Shaders\vlinepool_vs.hlsl.h" />
+    <ClInclude Include="StringUtils.h" />
     <ClInclude Include="VisualLinePool.h" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeviceResources.cpp" />
+    <ClCompile Include="MainPageViewModel.cpp" />
     <ClCompile Include="MasterViewer.cpp">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -180,6 +183,7 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="App.idl">
@@ -188,10 +192,13 @@
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
+    <Midl Include="MainPageViewModel.idl" />
     <Midl Include="MasterViewer.idl">
       <DependentUpon>MasterViewer.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="StringUtils.idl" />
+    <Midl Include="ViewEntities.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

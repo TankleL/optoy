@@ -14,6 +14,15 @@
   <ItemGroup>
     <Midl Include="App.idl" />
     <Midl Include="MainPage.idl" />
+    <Midl Include="MainPageViewModel.idl">
+      <Filter>ViewModels</Filter>
+    </Midl>
+    <Midl Include="ViewEntities.idl">
+      <Filter>Entities</Filter>
+    </Midl>
+    <Midl Include="StringUtils.idl">
+      <Filter>Utils</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -22,6 +31,12 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="DeviceResources.cpp">
       <Filter>DX</Filter>
+    </ClCompile>
+    <ClCompile Include="MainPageViewModel.cpp">
+      <Filter>ViewModels</Filter>
+    </ClCompile>
+    <ClCompile Include="StringUtils.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +70,12 @@
     </ClInclude>
     <ClInclude Include="GraphicsAlgo.h">
       <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="MainPageViewModel.h">
+      <Filter>ViewModels</Filter>
+    </ClInclude>
+    <ClInclude Include="StringUtils.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
