@@ -18,13 +18,30 @@
                 <RowDefinition Height="150"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.RayList, Mode=OneWay}">
+            <Grid Grid.Row="0">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel>
+                        <TextBlock Text="Origin: "/>
+                        <TextBox PlaceholderText="x,y,z"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Direction: "/>
+                        <TextBox PlaceholderText="x,y,z"/>
+                    </StackPanel>
+                    <Button Content="Add"/>
+                </StackPanel>
+            </Grid>
+            <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.RayList, Mode=OneWay}">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="ve:LineSegment">
-                        <TextBlock>
-                            <Run Text="Ray "/>
-                            <Run Text="{x:Bind raydbg:StringUtils.GetString(ray)}"/>
-                        </TextBlock>
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock Text="Origin"/>
+                            <TextBlock Text="{x:Bind raydbg:StringUtils.GetString(ray.o)}" Margin="10,0,0,0"/>
+                            <TextBlock Text="Direction"/>
+                            <TextBlock Text="{x:Bind raydbg:StringUtils.GetString(ray.d)}" Margin="10,0,0,0"/>
+                            <TextBlock Text="Traval"/>
+                            <TextBlock Text="{x:Bind raydbg:StringUtils.GetString(t)}" Margin="10,0,0,0"/>
+                        </StackPanel>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

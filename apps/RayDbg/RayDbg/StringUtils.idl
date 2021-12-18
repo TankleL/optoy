@@ -6,5 +6,6 @@ namespace raydbg{
         static String GetString(raydbg.ViewEntities.Point pot);
         static String GetString(raydbg.ViewEntities.Vector vec);
         static String GetString(raydbg.ViewEntities.Ray ray);
+        static String GetString(Single f);
     }
 }

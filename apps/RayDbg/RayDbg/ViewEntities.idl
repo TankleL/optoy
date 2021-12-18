@@ -1,25 +1,27 @@
-namespace raydbg {
+namespace raydbg{
 namespace ViewEntities {
-    [version(0x00000000)]
     struct Point {
-        float x, y, z, w;
+        Single x;
+        Single y;
+        Single z;
+        Single w;
     };
 
-    [version(0x00000000)]
-    struct Vector {
-        float x, y, z, w;
+    struct Vector{
+        Single x;
+        Single y;
+        Single z;
+        Single w;
     };
 
-    [version(0x00000000)]
-    struct Ray {
+    struct Ray{
         Point o;
         Vector d;
     };
 
-    [version(0x00000000)]
-    struct LineSegment {
+    struct LineSegment{
         Ray ray;
-        float tmin, tmax;
+        Single t;
     };
 }
 }
