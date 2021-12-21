@@ -1,0 +1,48 @@
+﻿#pragma once
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <exception>
+#include <format>
+#include <functional>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <queue>
+
+#include <d3d11_3.h>
+#include <d3dcompiler.h>
+#include <dxgi1_4.h>
+#include <DirectXMath.h>
+#include <DirectXColors.h>
+#include <windows.h>
+#include <unknwn.h>
+#include <restrictederrorinfo.h>
+#include <hstring.h>
+
+// Undefine GetCurrentTime macro to prevent
+// conflict with Storyboard::GetCurrentTime
+#undef GetCurrentTime
+
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
+#include <winrt/Microsoft.Graphics.DirectX.h>
+#include <winrt/Microsoft.UI.Composition.h>
+#include <winrt/Microsoft.UI.Xaml.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Microsoft.UI.Xaml.Data.h>
+#include <winrt/Microsoft.UI.Xaml.Interop.h>
+#include <winrt/Microsoft.UI.Xaml.Markup.h>
+#include <winrt/Microsoft.UI.Xaml.Media.h>
+#include <winrt/Microsoft.UI.Xaml.Navigation.h>
+#include <winrt/Microsoft.UI.Xaml.Shapes.h>
+#include <winrt/Microsoft.UI.Dispatching.h>
+#include <microsoft.ui.xaml.media.dxinterop.h>
+#include <microsoft.ui.xaml.window.h>
+#include <winrt/Windows.UI.Xaml.Interop.h>
+#include <wil/cppwinrt_helpers.h>
+#include <ppl.h>
+#include <ppltasks.h>
