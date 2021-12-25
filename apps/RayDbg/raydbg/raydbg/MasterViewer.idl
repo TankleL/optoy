@@ -1,8 +1,11 @@
+import "ViewEntities.idl";
+
 namespace raydbg
 {
     [default_interface]
     runtimeclass MasterViewer : Microsoft.UI.Xaml.Controls.UserControl
     {
         MasterViewer();
+        void SetLines(raydbg.ViewEntities.LineSegment[] lines);
     }
 }

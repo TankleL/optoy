@@ -1,8 +1,9 @@
 import "ViewEntities.idl";
 
-namespace raydbg {
+namespace raydbg{
     runtimeclass MainPageViewModel {
         MainPageViewModel();
         Windows.Foundation.Collections.IObservableVector<raydbg.ViewEntities.LineSegment> RayList{ get; };
+        event Windows.Foundation.EventHandler<Object> RayListUpdated;
     }
 }

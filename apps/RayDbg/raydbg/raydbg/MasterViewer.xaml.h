@@ -10,6 +10,7 @@
 namespace winrt::raydbg::implementation {
     struct MasterViewer : MasterViewerT<MasterViewer> {
         MasterViewer();
+        void SetLines(winrt::array_view<const ViewEntities::LineSegment> const& lines);
 
     private:
         //void _on_dpi_changed(winrt::Windows::Graphics::Display::DisplayInformation display_info);

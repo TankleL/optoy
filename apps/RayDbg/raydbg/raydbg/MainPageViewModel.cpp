@@ -8,6 +8,9 @@ namespace winrt::raydbg::implementation
 {
     MainPageViewModel::MainPageViewModel()
         : _raylist(winrt::single_threaded_observable_vector<ViewEntities::LineSegment>()) {
+        _raylist.VectorChanged([this](auto const& sender, auto) {
+            _raylist_updated(nullptr, nullptr);
+        });
         // test code
         for (int i = 0; i < 10; ++i) {
             _raylist.Append(ViewEntities::LineSegment{

@@ -20,7 +20,7 @@ namespace winrt::raydbg {
         template<class L> requires
             std::is_same_v<L, std::vector<entities::line_segment_t<float> const&>> ||
             std::is_same_v<L, std::vector<entities::line_segment_t<float>&&>>
-            void set_lines(L && lines, GraphicsRenderThread & graphics) {
+        void set_lines(L && lines, GraphicsRenderThread & graphics) {
             graphics.dispatch([this, l = std::forward<L>(lines)](auto& g) {
                 std::vector<vertex_t> vertices;
                 vertices.resize(l.size() * 2);

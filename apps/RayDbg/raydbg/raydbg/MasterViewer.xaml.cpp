@@ -20,6 +20,9 @@ namespace winrt::raydbg::implementation {
         });
     }
 
+    void MasterViewer::SetLines(winrt::array_view<const ViewEntities::LineSegment> const& lines) {
+    }
+
     //void MasterViewer::_on_dpi_changed(winrt::Windows::Graphics::Display::DisplayInformation display_info) {
     //    _graphics.dispatch([dpi = display_info.LogicalDpi()](auto& g) { g.get_device_resources().set_dpi(dpi); });
     //}
