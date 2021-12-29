@@ -8,5 +8,6 @@
 #include "interfaces/iscene.hpp"
 #include "integrators/pathint.hpp"
 #include "core/threadpool.hpp"
+#include "core/irresolver.hpp"
 
 #endif // !OPTOY_HEADER_FILES

@@ -1,6 +1,7 @@
 find_package(GTest CONFIG REQUIRED)
 add_executable(optoytests
     intersec-tests.cpp
+    irresolver-tests.cpp
     ray-tests.cpp
     threadpool-tests.cpp
 )

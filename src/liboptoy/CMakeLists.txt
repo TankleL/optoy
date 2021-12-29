@@ -11,6 +11,7 @@ set(LIBOPTOY_HEADER_FILES
     includes/primitives/ray.hpp
     includes/primitives/sphere.hpp
     includes/core/threadpool.hpp
+    includes/core/irresolver.hpp
 )
 
 set(LIBOPTOY_SOURCE_FILES
