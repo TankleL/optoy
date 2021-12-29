@@ -2,6 +2,7 @@ find_package(GTest CONFIG REQUIRED)
 add_executable(optoytests
     intersec-tests.cpp
     ray-tests.cpp
+    threadpool-tests.cpp
 )
 
 target_link_libraries(optoytests PRIVATE GTest::gtest GTest::gtest_main optoy::liboptoy)
