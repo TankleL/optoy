@@ -10,7 +10,7 @@ param (
     $BuildDir = "build",
 
     [string]
-    $CMakeGenerator = 'Visual Studio 16',
+    $CMakeGenerator = 'Visual Studio 17',
 
     [string]
     $VcpkgTriplet = 'x64-windows-static',
