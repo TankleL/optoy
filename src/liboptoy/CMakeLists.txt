@@ -2,16 +2,17 @@ project(liboptoy)
 
 set(LIBOPTOY_HEADER_FILES
     includes/optoy.hpp
-    includes/mathdef.hpp
-    includes/integrators/pathint.hpp
+    includes/predef.hpp
+    includes/mathutils.hpp
+    includes/core/geo.hpp
+    includes/core/interaction.hpp
+    includes/core/pathint.hpp
+    includes/core/ray.hpp
+    includes/core/sphere.hpp
+    includes/core/threadpool.hpp
     includes/interfaces/icamera.hpp
     includes/interfaces/iscene.hpp
-    includes/primitives/geo.hpp
-    includes/primitives/intersec.hpp
-    includes/primitives/ray.hpp
-    includes/primitives/sphere.hpp
-    includes/core/threadpool.hpp
-    includes/core/irresolver.hpp
+    includes/interfaces/ishape.hpp
 )
 
 set(LIBOPTOY_SOURCE_FILES

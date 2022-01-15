@@ -51,6 +51,9 @@ inline T clamp(T val, U low, V high) {
     else return val;
 }
 
+template<class TScalar>
+inline TScalar square(TScalar a) { return a * a; }
+
 // solve_quadratic() finds solutions of the given quadratic equation ax^2 + bx + c = 0
 template<class TScalar>
 inline bool solve_quadratic(TScalar a, TScalar b, TScalar c, TScalar& x0, TScalar& x1) {
@@ -67,7 +70,7 @@ inline bool solve_quadratic(TScalar a, TScalar b, TScalar c, TScalar& x0, TScala
 }
 
 template<class TVec4>
-inline TVec4 normalize_4as3(TVec4&& src) {
+inline TVec4 normalize_xyz(TVec4&& src) {
     const auto len = std::sqrt(src(0) * src(0) + src(1) * src(1) + src(2) * src(2));
     return TVec4(src(0) / len, src(1) / len, src(2) / len, src(3));
 }

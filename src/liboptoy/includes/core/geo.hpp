@@ -12,7 +12,7 @@ template<class TScalar> struct ray;
 namespace optoy::geo {
 template<class TScalar, class TShape>
 struct deduce_scalar {
-    static inline std::optional<intersec<TScalar>> intersects(TShape const& shape, ray<TScalar> const& ray);
+    //static inline std::optional<intersec<TScalar>> intersects(TShape const& shape, ray<TScalar> const& ray);
 };
 
 template<class TScalar, class TShape>

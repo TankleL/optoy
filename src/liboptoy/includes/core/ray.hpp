@@ -1,21 +1,21 @@
 #ifndef OPTOY_RAY_H
 #define OPTOY_RAY_H
 
-#include "mathdef.hpp"
+#include "mathutils.hpp"
 
 namespace optoy {
 template<class TScalar>
-struct ray {
+struct ray_t {
     const vector4<TScalar> o; // origin
     const vector4<TScalar> d; // direction
-    const TScalar           t_max;
+    const TScalar          t_max;
 };
 
-using ray_f = ray<float>;
-using ray_d = ray<double>;
+using ray_f = ray_t<float>;
+using ray_d = ray_t<double>;
 
 template<class TScalar>
-inline ray<TScalar> make_ray(const vector4<TScalar>& point_from, const vector4<TScalar>& point_to)
+inline ray_t<TScalar> make_ray(const vector4<TScalar>& point_from, const vector4<TScalar>& point_to)
 {}
 
 template<class TScalar>
