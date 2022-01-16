@@ -9,10 +9,13 @@ set(LIBOPTOY_HEADER_FILES
     includes/core/pathint.hpp
     includes/core/ray.hpp
     includes/core/sphere.hpp
+    includes/core/texture2d.hpp
     includes/core/threadpool.hpp
     includes/interfaces/icamera.hpp
+    includes/interfaces/iimage.hpp
     includes/interfaces/iscene.hpp
     includes/interfaces/ishape.hpp
+    includes/io/pngwriter.hpp
 )
 
 set(LIBOPTOY_SOURCE_FILES
@@ -30,6 +33,9 @@ target_include_directories(optoy PUBLIC includes)
 
 find_package(Eigen3 CONFIG REQUIRED)
 target_link_libraries(optoy PUBLIC Eigen3::Eigen)
+
+find_package(lodepng CONFIG REQUIRED)
+target_link_libraries(optoy PUBLIC lodepng)
 
 target_precompile_headers(optoy
     PUBLIC
