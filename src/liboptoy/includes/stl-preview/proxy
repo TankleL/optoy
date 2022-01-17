@@ -16,27 +16,6 @@ namespace std {
 
 enum class constraint_level { none, nontrivial, nothrow, trivial };
 
-template <class T, auto F> struct facade_operation;
-template <class R, class... Args, auto F>
-struct facade_operation<R(Args...), F> {
-  using return_type = R;
-  using argument_types = tuple<Args...>;
-  static constexpr auto invoker = F;
-};
-
-template <class... Os>
-struct facade {
-  using operations = tuple<Os...>;
-  static constexpr size_t pointer_max_size = sizeof(void*) * 2u;
-  static constexpr size_t pointer_max_alignment = alignof(void*);
-  static constexpr constraint_level pointer_copyability =
-      constraint_level::none;
-  static constexpr constraint_level pointer_relocatability =
-      constraint_level::nothrow;
-  static constexpr constraint_level pointer_destructibility =
-      constraint_level::nothrow;
-};
-
 namespace detail {
 
 struct applicable_traits { static constexpr bool applicable = true; };
@@ -85,6 +64,16 @@ template <class P> requires requires(P ptr) { { *ptr }; }
 struct pointer_traits<P> : applicable_traits
     { using value_type = decltype(*declval<P&>()); };
 
+template <class T, class... Us>
+struct index_traits : integral_constant<size_t, 0u> {};
+template <class T, class U, class... Us> requires (!is_same_v<T, U>)
+struct index_traits<T, U, Us...>
+    : integral_constant<size_t, index_traits<T, Us...>::value + 1u> {};
+
+template <class T, class UsTuple> struct tuple_index_traits;
+template <class T, class... Us>
+struct tuple_index_traits<T, tuple<Us...>> : index_traits<T, Us...> {};
+
 template <class O, class ArgumentTuple>
 struct facade_operation_traits_impl : inapplicable_traits {};
 template <class O, class... Args>
@@ -112,46 +101,20 @@ template <class O> requires requires {
 struct facade_operation_traits<O>
     : facade_operation_traits_impl<O, typename O::argument_types> {};
 
-template <class T, class... Us>
-struct index_of : integral_constant<size_t, 0u> {};
-template <class T, class U, class... Us> requires (!is_same_v<T, U>)
-struct index_of<T, U, Us...>
-    : integral_constant<size_t, index_of<T, Us...>::value + 1u> {};
-
-template <class T, class UsTuple> struct tuple_index_of;
-template <class T, class... Us>
-struct tuple_index_of<T, tuple<Us...>> : index_of<T, Us...> {};
-
-template <class T, class U> struct flattening_traits_impl;
-template <class T>
-struct flattening_traits_impl<tuple<>, T> { using type = T; };
-template <class T, class... Ts, class U>
-struct flattening_traits_impl<tuple<T, Ts...>, U> {
-  using type = typename flattening_traits_impl<tuple<Ts...>, U>::type;
-};
-template <class T, class... Ts, class... Us>
-    requires (index_of<T, Us...>::value == sizeof...(Us))
-struct flattening_traits_impl<tuple<T, Ts...>, tuple<Us...>> {
-  using type = typename flattening_traits_impl<
-      tuple<Ts...>, tuple<Us..., T>>::type;
-};
-template <class T>
-struct flattening_traits { using type = tuple<T>; };
+template <class... Os>
+struct all_unique_facade_operation_traits : inapplicable_traits {};
 template <>
-struct flattening_traits<tuple<>> { using type = tuple<>; };
-template <class T, class... Ts>
-struct flattening_traits<tuple<T, Ts...>> {
-  using type = typename flattening_traits_impl<
-      typename flattening_traits<T>::type,
-      typename flattening_traits<tuple<Ts...>>::type>::type;
-};
-template <class F>
-using facade_ops = typename flattening_traits<typename F::operations>::type;
+struct all_unique_facade_operation_traits<> : applicable_traits {};
+template <class O, class... Os> requires (
+    facade_operation_traits<O>::applicable &&
+    index_traits<O, Os...>::value == sizeof...(Os) &&
+    all_unique_facade_operation_traits<Os...>::applicable)
+struct all_unique_facade_operation_traits<O, Os...> : applicable_traits {};
 
 template <class F, class OperationTuple>
 struct facade_traits_impl : inapplicable_traits {};
 template <class F, class... Os>
-    requires (facade_operation_traits<Os>::applicable && ...)
+    requires (all_unique_facade_operation_traits<Os...>::applicable)
 struct facade_traits_impl<F, tuple<Os...>> : applicable_traits {
   template <class P>
   static constexpr bool applicable_pointer = sizeof(P) <= F::pointer_max_size &&
@@ -162,8 +125,7 @@ struct facade_traits_impl<F, tuple<Os...>> : applicable_traits {
       (facade_operation_traits<Os>::template applicable_operand<
           typename pointer_traits<P>::value_type> && ...);
 };
-template <class F>
-struct facade_traits : inapplicable_traits {};
+template <class F> struct facade_traits : inapplicable_traits {};
 template <class F> requires requires {
   typename F::operations;
   { F::pointer_max_size } -> convertible_to<size_t>;
@@ -172,7 +134,7 @@ template <class F> requires requires {
   { F::pointer_relocatability } -> convertible_to<constraint_level>;
   { F::pointer_destructibility } -> convertible_to<constraint_level>;
 }
-struct facade_traits<F> : facade_traits_impl<F, facade_ops<F>> {};
+struct facade_traits<F> : facade_traits_impl<F, typename F::operations> {};
 
 template <class OperationTuple> struct facade_operation_meta;
 template <class... Os>
@@ -263,14 +225,14 @@ template <class F>
 struct proxy_meta : type_info_meta, copyability_meta<F::pointer_copyability>,
     relocatability_meta<F::pointer_relocatability>,
     destructibility_meta<F::pointer_destructibility>,
-    facade_operation_meta<facade_ops<F>> {
+    facade_operation_meta<typename F::operations> {
   template <class P>
   constexpr explicit proxy_meta(in_place_type_t<P>)
       : type_info_meta(in_place_type<P>),
         copyability_meta<F::pointer_copyability>(in_place_type<P>),
         relocatability_meta<F::pointer_relocatability>(in_place_type<P>),
         destructibility_meta<F::pointer_destructibility>(in_place_type<P>),
-        facade_operation_meta<facade_ops<F>>(in_place_type<P>) {}
+        facade_operation_meta<typename F::operations>(in_place_type<P>) {}
 };
 
 }  // namespace detail
@@ -419,10 +381,10 @@ class proxy {
   }
   template <class O, class... Args>
   decltype(auto) invoke(Args&&... args)
-      requires (detail::tuple_index_of<O, detail::facade_ops<F>>::value <
-              tuple_size_v<detail::facade_ops<F>> &&
+      requires (detail::tuple_index_traits<O, typename F::operations>::value <
+              tuple_size_v<typename F::operations> &&
           is_convertible_v<tuple<Args...>, typename O::argument_types>) {
-    return get<detail::tuple_index_of<O, detail::facade_ops<F>>::value>(
+    return get<detail::tuple_index_traits<O, typename F::operations>::value>(
         meta_->op_functions)(ptr_, forward<Args>(args)...);
   }
 
@@ -432,6 +394,59 @@ class proxy {
 
   template <class P>
   static constexpr detail::proxy_meta<F> META_STORAGE{in_place_type<P>};
+};
+
+namespace detail {
+
+template <class O>
+struct facade_operation_aggregation_traits : inapplicable_traits {};
+template <class O> requires facade_operation_traits<O>::applicable
+struct facade_operation_aggregation_traits<O> : applicable_traits {};
+template <class... Os>
+    requires (facade_operation_aggregation_traits<Os>::applicable && ...)
+struct facade_operation_aggregation_traits<tuple<Os...>> : applicable_traits {};
+
+template <class T, class U> struct flattening_traits_impl;
+template <class T>
+struct flattening_traits_impl<tuple<>, T> { using type = T; };
+template <class T, class... Ts, class U>
+struct flattening_traits_impl<tuple<T, Ts...>, U>
+    : flattening_traits_impl<tuple<Ts...>, U> {};
+template <class T, class... Ts, class... Us>
+    requires (index_traits<T, Us...>::value == sizeof...(Us))
+struct flattening_traits_impl<tuple<T, Ts...>, tuple<Us...>>
+    : flattening_traits_impl<tuple<Ts...>, tuple<Us..., T>> {};
+template <class T> struct flattening_traits { using type = tuple<T>; };
+template <> struct flattening_traits<tuple<>> { using type = tuple<>; };
+template <class T, class... Ts>
+struct flattening_traits<tuple<T, Ts...>> : flattening_traits_impl<
+    typename flattening_traits<T>::type,
+    typename flattening_traits<tuple<Ts...>>::type> {};
+
+}  // namespace detail
+
+template <class T, auto F> struct facade_operation;
+template <class R, class... Args, auto F>
+struct facade_operation<R(Args...), F> {
+  using return_type = R;
+  using argument_types = tuple<Args...>;
+  static constexpr auto invoker = F;
+  facade_operation() = delete;
+};
+
+template <class... Os> requires (
+    detail::facade_operation_aggregation_traits<Os>::applicable && ...)
+struct facade {
+  using operations = typename detail::flattening_traits<tuple<Os...>>::type;
+  static constexpr size_t pointer_max_size = sizeof(void*) * 2u;
+  static constexpr size_t pointer_max_alignment = alignof(void*);
+  static constexpr constraint_level pointer_copyability =
+      constraint_level::none;
+  static constexpr constraint_level pointer_relocatability =
+      constraint_level::nothrow;
+  static constexpr constraint_level pointer_destructibility =
+      constraint_level::nothrow;
+  facade() = delete;
 };
 
 namespace detail {
