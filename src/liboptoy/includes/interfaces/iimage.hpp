@@ -3,7 +3,8 @@
 
 #include <stl-preview/proxy>
 
-namespace optoy::image2d {
+namespace optoy {
+namespace image2d {
 using coord_t = uint32_t;
 using channel_t = unsigned char;
 
@@ -38,6 +39,7 @@ struct interface_t : std::facade<
     pixel_get_f,
     pixel_set_f>{};
 
+} // namespace image2d
 } // namespace optoy
 
 #endif // !OPTOY_IIMAGE_HPP

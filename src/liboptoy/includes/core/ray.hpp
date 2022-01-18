@@ -19,7 +19,7 @@ inline ray_t<TScalar> make_ray(const vector4<TScalar>& point_from, const vector4
 {}
 
 template<class TScalar>
-inline constexpr vector4<TScalar> on(const ray<TScalar>& r, TScalar t) {
+inline constexpr vector4<TScalar> on(const ray_t<TScalar>& r, TScalar t) {
     return r.o + r.d * t;
 }
 

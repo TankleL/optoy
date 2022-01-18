@@ -5,6 +5,7 @@
 #include "interfaces/iimage.hpp"
 
 namespace optoy {
+// >>> proxy info: texture2d_t meets the requirements of image2d::interface_t
 class texture2d_t {
 public:
     texture2d_t(image2d::coord_t width, image2d::coord_t height);

@@ -7,7 +7,9 @@ set(LIBOPTOY_HEADER_FILES
     includes/core/geo.hpp
     includes/core/interaction.hpp
     includes/core/pathint.hpp
+    includes/core/scenenode.hpp
     includes/core/ray.hpp
+    includes/core/simplecam.hpp
     includes/core/sphere.hpp
     includes/core/texture2d.hpp
     includes/core/threadpool.hpp
