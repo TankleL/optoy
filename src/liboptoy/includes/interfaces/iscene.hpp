@@ -9,24 +9,25 @@
 
 namespace optoy{
 namespace scene_node {
-struct interface_t;
-
 struct name_f : std::facade_operation<
     std::string_view(),
     [](const auto& self) { return self.name(); }> {};
 
-struct children_f : std::facade_operation<
-    const std::vector<std::proxy<interface_t>>&(),
-    [](const auto& self) { return self.children(); }> {};
-
-struct add_f : std::facade_operation<
-    void(std::proxy<interface_t>&&),
-    [](auto& self, std::proxy<interface_t>&& node) { self.add(node); }> {};
+struct add_f;
+struct children_f;
 
 struct interface_t : std::facade<
     name_f,
     add_f,
     children_f>{};
+
+struct add_f : std::facade_operation<
+    void(std::proxy<interface_t>&&),
+    [](auto& self, std::proxy<interface_t>&& node) { self.add(node); }> {};
+
+struct children_f : std::facade_operation<
+    const std::vector<std::proxy<interface_t>>&(),
+    [](const auto& self) { return self.children(); }> {};
 } // namespace scene_node
 
 namespace position_scene_node {

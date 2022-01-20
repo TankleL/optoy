@@ -6,6 +6,7 @@
 #ifndef SRC_MAIN_P0957_PROXY_H_
 #define SRC_MAIN_P0957_PROXY_H_
 
+#include <new>
 #include <type_traits>
 #include <utility>
 #include <typeinfo>
@@ -15,6 +16,29 @@
 namespace std {
 
 enum class constraint_level { none, nontrivial, nothrow, trivial };
+
+template <class T, auto F> struct facade_operation;
+template <class R, class... Args, auto F>
+struct facade_operation<R(Args...), F> {
+  using return_type = R;
+  using argument_types = tuple<Args...>;
+  static constexpr auto invoker = F;
+  facade_operation() = delete;
+};
+
+template <class... Os>
+struct facade {
+  using operations = tuple<Os...>;
+  static constexpr size_t pointer_max_size = sizeof(void*) * 2u;
+  static constexpr size_t pointer_max_alignment = alignof(void*);
+  static constexpr constraint_level pointer_copyability =
+      constraint_level::none;
+  static constexpr constraint_level pointer_relocatability =
+      constraint_level::nothrow;
+  static constexpr constraint_level pointer_destructibility =
+      constraint_level::nothrow;
+  facade() = delete;
+};
 
 namespace detail {
 
@@ -67,10 +91,6 @@ template <class T, class U, class... Us> requires (!is_same_v<T, U>)
 struct index_traits<T, U, Us...>
     : integral_constant<size_t, index_traits<T, Us...>::value + 1u> {};
 
-template <class T, class UsTuple> struct tuple_index_traits;
-template <class T, class... Us>
-struct tuple_index_traits<T, tuple<Us...>> : index_traits<T, Us...> {};
-
 template <class O, class ArgumentTuple>
 struct facade_operation_traits_impl : inapplicable_traits {};
 template <class O, class... Args>
@@ -96,6 +116,52 @@ template <class O> requires requires {
 struct facade_operation_traits<O>
     : facade_operation_traits_impl<O, typename O::argument_types> {};
 
+struct empty_meta { template <class _> constexpr explicit empty_meta(_) {} };
+struct copy_meta {
+  template <class P>
+  constexpr explicit copy_meta(in_place_type_t<P>)
+      : clone([](char* self, const char* rhs)
+            { new(self) P(*reinterpret_cast<const P*>(rhs)); }) {}
+
+  void (*clone)(char*, const char*);
+};
+struct relocation_meta {
+  template <class P>
+  constexpr explicit relocation_meta(in_place_type_t<P>)
+      : relocate([](char* self, char* rhs) {
+              new(self) P(move(*reinterpret_cast<P*>(rhs)));
+              reinterpret_cast<P*>(rhs)->~P();
+            }) {}
+
+  void (*relocate)(char*, char*);
+};
+struct destruction_meta {
+  template <class P>
+  constexpr explicit destruction_meta(in_place_type_t<P>)
+      : destroy([](char* self) { reinterpret_cast<P*>(self)->~P(); }) {}
+
+  void (*destroy)(char*);
+};
+template <constraint_level C, class M>
+using conditional_meta = conditional_t<C == constraint_level::nontrivial ||
+    C == constraint_level::nothrow, M, empty_meta>;
+template <constraint_level CC, constraint_level RC, constraint_level DC,
+    class... Os>
+struct proxy_meta : conditional_meta<CC, copy_meta>,
+    conditional_meta<RC, relocation_meta>,
+    conditional_meta<DC, destruction_meta> {
+  template <class P>
+  constexpr explicit proxy_meta(in_place_type_t<P>)
+      : conditional_meta<CC, copy_meta>(in_place_type<P>),
+        conditional_meta<RC, relocation_meta>(in_place_type<P>),
+        conditional_meta<DC, destruction_meta>(in_place_type<P>),
+        get_type([]() -> const type_info& { return typeid(P); }),
+        op_functions(facade_operation_traits<Os>::template invoke<P>...) {}
+
+  const type_info&(*get_type)();
+  tuple<typename facade_operation_traits<Os>::function_type...> op_functions;
+};
+
 template <class T, class U> struct flattening_traits_impl;
 template <class T>
 struct flattening_traits_impl<tuple<>, T> { using type = T; };
@@ -116,7 +182,6 @@ struct flattening_traits<tuple<T, Ts...>> : flattening_traits_impl<
 template <class F, class OperationTuple>
 struct facade_traits_impl : inapplicable_traits {};
 template <class F, class... Os>
-    requires (facade_operation_traits<Os>::applicable && ...)
 struct facade_traits_impl<F, tuple<Os...>> : applicable_traits {
   template <class P>
   static constexpr bool applicable_pointer = sizeof(P) <= F::pointer_max_size &&
@@ -124,8 +189,18 @@ struct facade_traits_impl<F, tuple<Os...>> : applicable_traits {
       has_copyability<P>(F::pointer_copyability) &&
       has_relocatability<P>(F::pointer_relocatability) &&
       has_destructibility<P>(F::pointer_destructibility) &&
+      (facade_operation_traits<Os>::applicable && ...) &&
       (facade_operation_traits<Os>::template applicable_operand<
           typename pointer_traits<P>::value_type> && ...);
+
+  using meta_type = proxy_meta<F::pointer_copyability,
+      F::pointer_relocatability, F::pointer_destructibility, Os...>;
+
+  template <class O>
+  static constexpr size_t operation_index = index_traits<O, Os...>::value;
+
+  template <class O>
+  static constexpr bool has_operation = operation_index<O> < sizeof...(Os);
 };
 template <class F> struct facade_traits : inapplicable_traits {};
 template <class F> requires requires {
@@ -139,90 +214,8 @@ template <class F> requires requires {
 struct facade_traits<F> : facade_traits_impl<
     F, typename flattening_traits<typename F::operations>::type> {};
 
-template <constraint_level> struct copyability_meta
-    { template <class _> constexpr explicit copyability_meta(_) {} };
-template <>
-struct copyability_meta<constraint_level::nothrow> {
-  template <class P>
-  constexpr explicit copyability_meta(in_place_type_t<P>)
-      : clone([](char* self, const char* rhs) noexcept
-            { new(self) P(*reinterpret_cast<const P*>(rhs)); }) {}
-
-  void (*clone)(char*, const char*) noexcept;
-};
-template <>
-struct copyability_meta<constraint_level::nontrivial> {
-  template <class P>
-  constexpr explicit copyability_meta(in_place_type_t<P>)
-      : clone([](char* self, const char* rhs)
-            { new(self) P(*reinterpret_cast<const P*>(rhs)); }) {}
-
-  void (*clone)(char*, const char*);
-};
-
-template <constraint_level> struct relocatability_meta
-    { template <class _> constexpr explicit relocatability_meta(_) {} };
-template <>
-struct relocatability_meta<constraint_level::nothrow> {
-  template <class P>
-  constexpr explicit relocatability_meta(in_place_type_t<P>)
-      : relocate([](char* self, char* rhs) noexcept {
-              new(self) P(move(*reinterpret_cast<P*>(rhs)));
-              reinterpret_cast<P*>(rhs)->~P();
-            }) {}
-
-  void (*relocate)(char*, char*) noexcept;
-};
-template <>
-struct relocatability_meta<constraint_level::nontrivial> {
-  template <class P>
-  constexpr explicit relocatability_meta(in_place_type_t<P>)
-      : relocate([](char* self, char* rhs) {
-              new(self) P(move(*reinterpret_cast<P*>(rhs)));
-              reinterpret_cast<P*>(rhs)->~P();
-            }) {}
-
-  void (*relocate)(char*, char*);
-};
-
-template <constraint_level> struct destructibility_meta
-    { template <class _> constexpr explicit destructibility_meta(_) {} };
-template <>
-struct destructibility_meta<constraint_level::nothrow> {
-  template <class P>
-  constexpr explicit destructibility_meta(in_place_type_t<P>)
-      : destroy([](char* self) noexcept
-            { reinterpret_cast<P*>(self)->~P(); }) {}
-
-  void (*destroy)(char*) noexcept;
-};
-template <>
-struct destructibility_meta<constraint_level::nontrivial> {
-  template <class P>
-  constexpr explicit destructibility_meta(in_place_type_t<P>)
-      : destroy([](char* self) { reinterpret_cast<P*>(self)->~P(); }) {}
-
-  void (*destroy)(char*);
-};
-
-template <class F, class Os> struct proxy_meta;
-template <class F, class... Os>
-struct proxy_meta<F, tuple<Os...>> : copyability_meta<F::pointer_copyability>,
-    relocatability_meta<F::pointer_relocatability>,
-    destructibility_meta<F::pointer_destructibility> {
-  template <class P>
-  constexpr explicit proxy_meta(in_place_type_t<P>)
-      : copyability_meta<F::pointer_copyability>(in_place_type<P>),
-        relocatability_meta<F::pointer_relocatability>(in_place_type<P>),
-        destructibility_meta<F::pointer_destructibility>(in_place_type<P>),
-        get_type([]() noexcept -> const type_info& { return typeid(P); }),
-        op_functions(facade_operation_traits<Os>::template invoke<P>...) {}
-
-  const type_info&(*get_type)() noexcept;
-  tuple<typename facade_operation_traits<Os>::function_type...> op_functions;
-};
-template <class F, class Os, class P>
-constexpr proxy_meta<F, Os> PROXY_META_STORAGE{in_place_type<P>};
+template <class F, class P>
+constexpr typename facade_traits<F>::meta_type META_STORAGE{in_place_type<P>};
 
 }  // namespace detail
 
@@ -236,10 +229,8 @@ concept proxiable = detail::facade_traits<F>::applicable &&
     detail::pointer_traits<P>::applicable &&
     detail::facade_traits<F>::template applicable_pointer<P>;
 
-template <class F>
+template <class F> requires detail::facade_traits<F>::applicable
 class proxy {
-  using Os = typename detail::flattening_traits<typename F::operations>::type;
-
  public:
   proxy() { meta_ = nullptr; }
   proxy(nullptr_t) : proxy() {}
@@ -282,7 +273,7 @@ class proxy {
       noexcept(is_nothrow_constructible_v<P, Args...>)
       requires(proxiable<P, F>) {
     new(ptr_) P(forward<Args>(args)...);
-    meta_ = &detail::PROXY_META_STORAGE<F, Os, P>;
+    meta_ = &detail::META_STORAGE<F, P>;
   }
   proxy& operator=(const proxy& rhs)
       noexcept(F::pointer_copyability >= constraint_level::nothrow &&
@@ -372,38 +363,15 @@ class proxy {
   }
   template <class O, class... Args>
   decltype(auto) invoke(Args&&... args)
-      requires (detail::tuple_index_traits<O, Os>::value < tuple_size_v<Os> &&
+      requires (detail::facade_traits<F>::template has_operation<O> &&
           is_convertible_v<tuple<Args...>, typename O::argument_types>) {
-    return get<detail::tuple_index_traits<O, Os>::value>(meta_->op_functions)(
-        ptr_, forward<Args>(args)...);
+    return get<detail::facade_traits<F>::template operation_index<O>>(
+        meta_->op_functions)(ptr_, forward<Args>(args)...);
   }
 
  private:
-  const detail::proxy_meta<F, Os>* meta_;
+  const typename detail::facade_traits<F>::meta_type* meta_;
   alignas(F::pointer_max_alignment) char ptr_[F::pointer_max_size];
-};
-
-template <class T, auto F> struct facade_operation;
-template <class R, class... Args, auto F>
-struct facade_operation<R(Args...), F> {
-  using return_type = R;
-  using argument_types = tuple<Args...>;
-  static constexpr auto invoker = F;
-  facade_operation() = delete;
-};
-
-template <class... Os>
-struct facade {
-  using operations = tuple<Os...>;
-  static constexpr size_t pointer_max_size = sizeof(void*) * 2u;
-  static constexpr size_t pointer_max_alignment = alignof(void*);
-  static constexpr constraint_level pointer_copyability =
-      constraint_level::none;
-  static constexpr constraint_level pointer_relocatability =
-      constraint_level::nothrow;
-  static constexpr constraint_level pointer_destructibility =
-      constraint_level::nothrow;
-  facade() = delete;
 };
 
 namespace detail {
