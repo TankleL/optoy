@@ -10,6 +10,7 @@
 #include "core/ray.hpp"
 #include "core/scenenode.hpp"
 #include "core/simplecam.hpp"
+#include "core/simplerenderer.hpp"
 #include "core/sphere.hpp"
 #include "core/texture2d.hpp"
 #include "core/threadpool.hpp"

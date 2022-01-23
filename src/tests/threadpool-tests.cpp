@@ -14,7 +14,7 @@ TEST(threadpool_tests, basic) {
     int task_count{0};
     ot::static_thread_pool<8> tp;
     for (int i = 0; i < tp_task_count; ++i) {
-        tp.execute([&mc, &cvf, &task_count, tp_task_count]() {
+        tp.submit([&mc, &cvf, &task_count, tp_task_count]() {
             std::this_thread::yield();
             {
                 std::scoped_lock<std::mutex> lc(mc);

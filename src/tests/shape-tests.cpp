@@ -19,9 +19,9 @@ TEST(ShapeTests, Sphere) {
         .t_max = 99999.9f
     };
 
-    auto p = std::make_proxy<ot::shape_i<float>>(unit_sphere);
+    auto p = std::make_proxy<ot::shape::interface_t<float>>(unit_sphere);
     ot::surface_interaction_t<float> si;
     float t;
-    auto hit = p.invoke<ot::op::intersect_f<float>>(si, t, ray);
+    auto hit = p.invoke<ot::shape::intersect_f<float>>(si, t, ray);
     ASSERT_TRUE(hit);
 }

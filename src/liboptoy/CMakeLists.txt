@@ -10,6 +10,7 @@ set(LIBOPTOY_HEADER_FILES
     includes/core/scenenode.hpp
     includes/core/ray.hpp
     includes/core/simplecam.hpp
+    includes/core/simplerenderer.hpp
     includes/core/sphere.hpp
     includes/core/texture2d.hpp
     includes/core/threadpool.hpp
