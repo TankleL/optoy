@@ -29,7 +29,7 @@ struct facade_expr<R(Args...), F> {
 
 template <class... Es>
 struct facade {
-  using operations = tuple<Es...>;
+  using expressions = tuple<Es...>;
   static constexpr size_t maximum_size = sizeof(void*) * 2u;
   static constexpr size_t maximum_alignment = alignof(void*);
   static constexpr constraint_level minimum_copyability =
@@ -216,7 +216,7 @@ struct basic_facade_traits_impl<F, tuple<Es...>> : applicable_traits {
 };
 template <class F> struct basic_facade_traits : inapplicable_traits {};
 template <class F> requires requires {
-      typename F::operations;
+      typename F::expressions;
       { F::maximum_size } -> convertible_to<size_t>;
       { F::maximum_alignment } -> convertible_to<size_t>;
       { F::minimum_copyability } -> convertible_to<constraint_level>;
@@ -224,7 +224,7 @@ template <class F> requires requires {
       { F::minimum_destructibility } -> convertible_to<constraint_level>;
     }
 struct basic_facade_traits<F> : basic_facade_traits_impl<
-    F, typename flattening_traits<typename F::operations>::type> {};
+    F, typename flattening_traits<typename F::expressions>::type> {};
 
 template <class F, class Es>
 struct facade_traits_impl : inapplicable_traits {};
@@ -245,7 +245,7 @@ struct facade_traits_impl<F, tuple<Es...>> : applicable_traits {
   template <class P> static constexpr meta_type meta{in_place_type<P>};
 };
 template <class F> struct facade_traits : facade_traits_impl<
-    F, typename flattening_traits<typename F::operations>::type> {};
+    F, typename flattening_traits<typename F::expressions>::type> {};
 
 template <class T, class U> struct dependent_traits { using type = T; };
 template <class T, class U>
