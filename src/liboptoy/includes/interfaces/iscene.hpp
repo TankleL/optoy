@@ -17,21 +17,21 @@ struct interface_t : std::facade<
     add_f,
     children_f>{};
 
-struct name_f : std::facade_operation<
+struct name_f : std::facade_expr<
     std::string_view(),
     [](const auto& self) { return self.name(); }> {};
 
-struct add_f : std::facade_operation<
+struct add_f : std::facade_expr<
     void(std::proxy<interface_t>&&),
     [](auto& self, std::proxy<interface_t>&& node) { self.add(std::move(node)); }> {};
 
-struct children_f : std::facade_operation<
+struct children_f : std::facade_expr<
     const std::vector<std::proxy<interface_t>>&(),
     [](const auto& self) { return self.children(); }> {};
 } // namespace scene_node
 
 namespace position_scene_node {
-struct model_transformation_f : std::facade_operation <
+struct model_transformation_f : std::facade_expr<
     transformation_t& (),
     [](auto& self) { return self.model_transformation(); }> {};
 

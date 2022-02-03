@@ -7,6 +7,7 @@
 #define SRC_MAIN_P0957_PROXY_H_
 
 #include <new>
+#include <initializer_list>
 #include <type_traits>
 #include <utility>
 #include <typeinfo>
@@ -17,25 +18,25 @@ namespace std {
 
 enum class constraint_level { none, nontrivial, nothrow, trivial };
 
-template <class T, auto F> struct facade_operation;
+template <class T, auto F> struct facade_expr;
 template <class R, class... Args, auto F>
-struct facade_operation<R(Args...), F> {
+struct facade_expr<R(Args...), F> {
   using return_type = R;
   using argument_types = tuple<Args...>;
   static constexpr auto invoker = F;
-  facade_operation() = delete;
+  facade_expr() = delete;
 };
 
-template <class... Os>
+template <class... Es>
 struct facade {
-  using operations = tuple<Os...>;
-  static constexpr size_t pointer_max_size = sizeof(void*) * 2u;
-  static constexpr size_t pointer_max_alignment = alignof(void*);
-  static constexpr constraint_level pointer_copyability =
+  using operations = tuple<Es...>;
+  static constexpr size_t maximum_size = sizeof(void*) * 2u;
+  static constexpr size_t maximum_alignment = alignof(void*);
+  static constexpr constraint_level minimum_copyability =
       constraint_level::none;
-  static constexpr constraint_level pointer_relocatability =
+  static constexpr constraint_level minimum_relocatability =
       constraint_level::nothrow;
-  static constexpr constraint_level pointer_destructibility =
+  static constexpr constraint_level minimum_destructibility =
       constraint_level::nothrow;
   facade() = delete;
 };
@@ -91,7 +92,7 @@ template <class T, class U, class... Us> requires (!is_same_v<T, U>)
 struct index_traits<T, U, Us...>
     : integral_constant<size_t, index_traits<T, Us...>::value + 1u> {};
 
-template <class O, class ArgumentTuple>
+template <class O, class Args>
 struct facade_operation_traits_impl : inapplicable_traits {};
 template <class O, class... Args>
 struct facade_operation_traits_impl<O, tuple<Args...>> : applicable_traits {
@@ -100,7 +101,6 @@ struct facade_operation_traits_impl<O, tuple<Args...>> : applicable_traits {
   template <class T>
   static constexpr bool applicable_operand = requires(T operand, Args... args)
       { { O::invoker(forward<T>(operand), forward<Args>(args)...) }; };
-
   template <class P>
   static typename O::return_type invoke(char* p, Args... args)
       { return O::invoker(**reinterpret_cast<P*>(p), forward<Args>(args)...); }
@@ -116,7 +116,20 @@ template <class O> requires requires {
 struct facade_operation_traits<O>
     : facade_operation_traits_impl<O, typename O::argument_types> {};
 
-struct empty_meta { template <class _> constexpr explicit empty_meta(_) {} };
+struct type_info_meta {
+  template <class P>
+  constexpr explicit type_info_meta(in_place_type_t<P>) : type(typeid(P)) {}
+
+  const type_info& type;
+};
+template <class... Es>
+struct facade_operation_meta {
+  template <class P>
+  constexpr explicit facade_operation_meta(in_place_type_t<P>)
+      : op_functions(facade_operation_traits<Es>::template invoke<P>...) {}
+
+  tuple<typename facade_operation_traits<Es>::function_type...> op_functions;
+};
 struct copy_meta {
   template <class P>
   constexpr explicit copy_meta(in_place_type_t<P>)
@@ -142,25 +155,32 @@ struct destruction_meta {
 
   void (*destroy)(char*);
 };
-template <constraint_level C, class M>
-using conditional_meta = conditional_t<C == constraint_level::nontrivial ||
-    C == constraint_level::nothrow, M, empty_meta>;
-template <constraint_level CC, constraint_level RC, constraint_level DC,
-    class... Os>
-struct proxy_meta : conditional_meta<CC, copy_meta>,
-    conditional_meta<RC, relocation_meta>,
-    conditional_meta<DC, destruction_meta> {
-  template <class P>
-  constexpr explicit proxy_meta(in_place_type_t<P>)
-      : conditional_meta<CC, copy_meta>(in_place_type<P>),
-        conditional_meta<RC, relocation_meta>(in_place_type<P>),
-        conditional_meta<DC, destruction_meta>(in_place_type<P>),
-        get_type([]() -> const type_info& { return typeid(P); }),
-        op_functions(facade_operation_traits<Os>::template invoke<P>...) {}
 
-  const type_info&(*get_type)();
-  tuple<typename facade_operation_traits<Os>::function_type...> op_functions;
+template <class... Ms>
+struct facade_meta : Ms... {
+  template <class P>
+  constexpr explicit facade_meta(in_place_type_t<P>)
+      : Ms(in_place_type<P>)... {}
 };
+
+template <constraint_level C, class M> struct conditional_meta_tag {};
+template <class M, class Ms> struct facade_meta_traits_impl;
+template <class M, class... Ms>
+struct facade_meta_traits_impl<M, facade_meta<Ms...>>
+    { using type = facade_meta<M, Ms...>; };
+template <constraint_level C, class M, class... Ms>
+    requires (C > constraint_level::none && C < constraint_level::trivial)
+struct facade_meta_traits_impl<conditional_meta_tag<C, M>, facade_meta<Ms...>>
+    { using type = facade_meta<M, Ms...>; };
+template <constraint_level C, class M, class... Ms>
+    requires (C < constraint_level::nontrivial || C > constraint_level::nothrow)
+struct facade_meta_traits_impl<conditional_meta_tag<C, M>, facade_meta<Ms...>>
+    { using type = facade_meta<Ms...>; };
+template <class... Ms> struct facade_meta_traits;
+template <class M, class... Ms>
+struct facade_meta_traits<M, Ms...> : facade_meta_traits_impl<
+    M, typename facade_meta_traits<Ms...>::type> {};
+template <> struct facade_meta_traits<> { using type = facade_meta<>; };
 
 template <class T, class U> struct flattening_traits_impl;
 template <class T>
@@ -179,43 +199,57 @@ struct flattening_traits<tuple<T, Ts...>> : flattening_traits_impl<
     typename flattening_traits<T>::type,
     typename flattening_traits<tuple<Ts...>>::type> {};
 
-template <class F, class OperationTuple>
-struct facade_traits_impl : inapplicable_traits {};
-template <class F, class... Os>
-struct facade_traits_impl<F, tuple<Os...>> : applicable_traits {
-  template <class P>
-  static constexpr bool applicable_pointer = sizeof(P) <= F::pointer_max_size &&
-      alignof(P) <= F::pointer_max_alignment &&
-      has_copyability<P>(F::pointer_copyability) &&
-      has_relocatability<P>(F::pointer_relocatability) &&
-      has_destructibility<P>(F::pointer_destructibility) &&
-      (facade_operation_traits<Os>::applicable && ...) &&
-      (facade_operation_traits<Os>::template applicable_operand<
-          typename pointer_traits<P>::value_type> && ...);
+template <class F, class Es> struct basic_facade_traits_impl;
+template <class F, class... Es>
+struct basic_facade_traits_impl<F, tuple<Es...>> : applicable_traits {
+  using meta_type = typename facade_meta_traits<
+      conditional_meta_tag<F::minimum_copyability, copy_meta>,
+      conditional_meta_tag<F::minimum_relocatability, relocation_meta>,
+      conditional_meta_tag<F::minimum_destructibility, destruction_meta>,
+      type_info_meta>::type;
+  using default_op = conditional_t<
+      sizeof...(Es) == 1u, tuple_element_t<0u, tuple<Es...>>, void>;
 
-  using meta_type = proxy_meta<F::pointer_copyability,
-      F::pointer_relocatability, F::pointer_destructibility, Os...>;
-
-  template <class O>
-  static constexpr size_t operation_index = index_traits<O, Os...>::value;
-
-  template <class O>
-  static constexpr bool has_operation = operation_index<O> < sizeof...(Os);
+  template <class O> static constexpr size_t op_index =
+      index_traits<O, Es...>::value;
+  template <class O> static constexpr bool has_op = op_index<O> < sizeof...(Es);
 };
-template <class F> struct facade_traits : inapplicable_traits {};
+template <class F> struct basic_facade_traits : inapplicable_traits {};
 template <class F> requires requires {
       typename F::operations;
-      { F::pointer_max_size } -> convertible_to<size_t>;
-      { F::pointer_max_alignment } -> convertible_to<size_t>;
-      { F::pointer_copyability } -> convertible_to<constraint_level>;
-      { F::pointer_relocatability } -> convertible_to<constraint_level>;
-      { F::pointer_destructibility } -> convertible_to<constraint_level>;
+      { F::maximum_size } -> convertible_to<size_t>;
+      { F::maximum_alignment } -> convertible_to<size_t>;
+      { F::minimum_copyability } -> convertible_to<constraint_level>;
+      { F::minimum_relocatability } -> convertible_to<constraint_level>;
+      { F::minimum_destructibility } -> convertible_to<constraint_level>;
     }
-struct facade_traits<F> : facade_traits_impl<
+struct basic_facade_traits<F> : basic_facade_traits_impl<
     F, typename flattening_traits<typename F::operations>::type> {};
 
-template <class F, class P>
-constexpr typename facade_traits<F>::meta_type META_STORAGE{in_place_type<P>};
+template <class F, class Es>
+struct facade_traits_impl : inapplicable_traits {};
+template <class F, class... Es>
+    requires (facade_operation_traits<Es>::applicable && ...)
+struct facade_traits_impl<F, tuple<Es...>> : applicable_traits {
+  using meta_type = facade_meta<
+      typename basic_facade_traits<F>::meta_type, facade_operation_meta<Es...>>;
+
+  template <class P>
+  static constexpr bool applicable_pointer =
+      sizeof(P) <= F::maximum_size && alignof(P) <= F::maximum_alignment &&
+      has_copyability<P>(F::minimum_copyability) &&
+      has_relocatability<P>(F::minimum_relocatability) &&
+      has_destructibility<P>(F::minimum_destructibility) &&
+      (facade_operation_traits<Es>::template applicable_operand<
+          typename pointer_traits<P>::value_type> && ...);
+  template <class P> static constexpr meta_type meta{in_place_type<P>};
+};
+template <class F> struct facade_traits : facade_traits_impl<
+    F, typename flattening_traits<typename F::operations>::type> {};
+
+template <class T, class U> struct dependent_traits { using type = T; };
+template <class T, class U>
+using dependent_t = typename dependent_traits<T, U>::type;
 
 }  // namespace detail
 
@@ -225,21 +259,24 @@ class bad_proxy_cast : public std::exception {
 };
 
 template <class P, class F>
-concept proxiable = detail::facade_traits<F>::applicable &&
-    detail::pointer_traits<P>::applicable &&
+concept proxiable = detail::pointer_traits<P>::applicable &&
+    detail::basic_facade_traits<F>::applicable &&
+    detail::facade_traits<F>::applicable &&
     detail::facade_traits<F>::template applicable_pointer<P>;
 
-template <class F> requires detail::facade_traits<F>::applicable
+template <class F> requires detail::basic_facade_traits<F>::applicable
 class proxy {
+  using basic_traits = detail::basic_facade_traits<F>;
+  using traits = detail::facade_traits<F>;
  public:
-  proxy() { meta_ = nullptr; }
-  proxy(nullptr_t) : proxy() {}
+  proxy() noexcept { meta_ = nullptr; }
+  proxy(nullptr_t) noexcept : proxy() {}
   proxy(const proxy& rhs)
-      noexcept(F::pointer_copyability >= constraint_level::nothrow)
-      requires(F::pointer_copyability >= constraint_level::nontrivial) {
+      noexcept(F::minimum_copyability >= constraint_level::nothrow)
+      requires(F::minimum_copyability >= constraint_level::nontrivial) {
     if (rhs.meta_ != nullptr) {
-      if constexpr (F::pointer_copyability == constraint_level::trivial) {
-        memcpy(ptr_, rhs.ptr_, F::pointer_max_size);
+      if constexpr (F::minimum_copyability == constraint_level::trivial) {
+        memcpy(ptr_, rhs.ptr_, F::maximum_size);
       } else {
         rhs.meta_->clone(ptr_, rhs.ptr_);
       }
@@ -249,11 +286,11 @@ class proxy {
     }
   }
   proxy(proxy&& rhs)
-      noexcept(F::pointer_relocatability >= constraint_level::nothrow)
-      requires(F::pointer_relocatability >= constraint_level::nontrivial) {
+      noexcept(F::minimum_relocatability >= constraint_level::nothrow)
+      requires(F::minimum_relocatability >= constraint_level::nontrivial) {
     if (rhs.meta_ != nullptr) {
-      if constexpr (F::pointer_relocatability == constraint_level::trivial) {
-        memcpy(ptr_, rhs.ptr_, F::pointer_max_size);
+      if constexpr (F::minimum_relocatability == constraint_level::trivial) {
+        memcpy(ptr_, rhs.ptr_, F::maximum_size);
       } else {
         rhs.meta_->relocate(ptr_, rhs.ptr_);
       }
@@ -265,39 +302,78 @@ class proxy {
   }
   template <class P>
   proxy(P&& ptr) noexcept(is_nothrow_constructible_v<decay_t<P>, P>)
-      requires(proxiable<decay_t<P>, F>)
+      requires(proxiable<decay_t<P>, F> && is_constructible_v<decay_t<P>, P>)
       : proxy(in_place_type<decay_t<P>>, forward<P>(ptr)) {}
-  proxy& operator=(nullptr_t) { proxy temp; swap(temp); return *this; }
   template <class P, class... Args>
   explicit proxy(in_place_type_t<P>, Args&&... args)
       noexcept(is_nothrow_constructible_v<P, Args...>)
-      requires(proxiable<P, F>) {
+      requires(proxiable<P, F> && is_constructible_v<P, Args...>) {
     new(ptr_) P(forward<Args>(args)...);
-    meta_ = &detail::META_STORAGE<F, P>;
+    meta_ = &traits::template meta<P>;
+  }
+  template <class P, class U, class... Args>
+  explicit proxy(in_place_type_t<P>, initializer_list<U> il, Args&&... args)
+      noexcept(is_nothrow_constructible_v<P, initializer_list<U>&, Args...>)
+      requires(proxiable<P, F> &&
+          is_constructible_v<P, initializer_list<U>&, Args...>)
+      : proxy(in_place_type<P>, il, forward<Args>(args)...) {}
+  proxy& operator=(nullptr_t)
+      noexcept(F::minimum_destructibility >= constraint_level::nothrow)
+      requires(F::minimum_destructibility >= constraint_level::nontrivial) {
+    this->~proxy();
+    new(this) proxy();
+    return *this;
   }
   proxy& operator=(const proxy& rhs)
-      noexcept(F::pointer_copyability >= constraint_level::nothrow &&
-          F::pointer_destructibility >= constraint_level::nothrow)
-      requires(F::pointer_copyability >= constraint_level::nontrivial &&
-          F::pointer_destructibility >= constraint_level::nontrivial)
-      { proxy temp{rhs}; swap(temp); return *this; }
+      noexcept(F::minimum_copyability >= constraint_level::nothrow &&
+          F::minimum_destructibility >= constraint_level::nothrow)
+      requires(F::minimum_copyability >= constraint_level::nontrivial &&
+          F::minimum_destructibility >= constraint_level::nontrivial &&
+          F::minimum_relocatability >= constraint_level::nontrivial) {
+    if constexpr (F::minimum_copyability >= constraint_level::nothrow &&
+        F::minimum_destructibility >= constraint_level::nothrow) {
+      this->~proxy();
+      new(this) proxy(rhs);
+    } else {
+      proxy temp{rhs};
+      swap(temp);
+    }
+    return *this;
+  }
   proxy& operator=(proxy&& rhs)
-      noexcept(F::pointer_relocatability >= constraint_level::nothrow &&
-          F::pointer_destructibility >= constraint_level::nothrow)
-      requires(F::pointer_relocatability >= constraint_level::nontrivial &&
-          F::pointer_destructibility >= constraint_level::nontrivial)
-      { swap(rhs); rhs.reset(); return *this; }
+      noexcept(F::minimum_relocatability >= constraint_level::nothrow &&
+          F::minimum_destructibility >= constraint_level::nothrow)
+      requires(F::minimum_relocatability >= constraint_level::nontrivial &&
+          F::minimum_destructibility >= constraint_level::nontrivial) {
+    if constexpr (F::minimum_relocatability >= constraint_level::nothrow &&
+        F::minimum_destructibility >= constraint_level::nothrow) {
+      this->~proxy();
+      new(this) proxy(move(rhs));
+    } else {
+      proxy temp{move(rhs)};
+      swap(temp);
+    }
+    return *this;
+  }
   template <class P>
   proxy& operator=(P&& ptr)
       noexcept(is_nothrow_constructible_v<decay_t<P>, P> &&
-          F::pointer_relocatability >= constraint_level::nothrow &&
-          F::pointer_destructibility >= constraint_level::nothrow)
-      requires(proxiable<decay_t<P>, F> &&
-          F::pointer_destructibility >= constraint_level::nontrivial)
-      { proxy temp{forward<P>(ptr)}; swap(temp); return *this; }
-  ~proxy() noexcept(F::pointer_destructibility >= constraint_level::nothrow)
-      requires(F::pointer_destructibility >= constraint_level::nontrivial) {
-    if constexpr (F::pointer_destructibility != constraint_level::trivial) {
+          F::minimum_destructibility >= constraint_level::nothrow)
+      requires(proxiable<decay_t<P>, F> && is_constructible_v<decay_t<P>, P> &&
+          F::minimum_destructibility >= constraint_level::nontrivial) {
+    if constexpr (is_nothrow_constructible_v<decay_t<P>, P> &&
+        F::minimum_destructibility >= constraint_level::nothrow) {
+      this->~proxy();
+      new(this) proxy(forward<P>(ptr));
+    } else {
+      proxy temp{forward<P>(ptr)};
+      swap(temp);
+    }
+    return *this;
+  }
+  ~proxy() noexcept(F::minimum_destructibility >= constraint_level::nothrow)
+      requires(F::minimum_destructibility >= constraint_level::nontrivial) {
+    if constexpr (F::minimum_destructibility != constraint_level::trivial) {
       if (meta_ != nullptr) {
         meta_->destroy(ptr_);
       }
@@ -306,35 +382,33 @@ class proxy {
 
   bool has_value() const noexcept { return meta_ != nullptr; }
   const type_info& type() const noexcept
-      { return meta_ == nullptr ? typeid(void) : meta_->get_type(); }
-  void reset() noexcept(F::pointer_destructibility >= constraint_level::nothrow)
-      requires(F::pointer_destructibility >= constraint_level::nontrivial)
+      { return meta_ == nullptr ? typeid(void) : meta_->type; }
+  void reset() noexcept(F::minimum_destructibility >= constraint_level::nothrow)
+      requires(F::minimum_destructibility >= constraint_level::nontrivial)
       { this->~proxy(); meta_ = nullptr; }
   void swap(proxy& rhs)
-      noexcept(F::pointer_relocatability >= constraint_level::nothrow)
-      requires(F::pointer_relocatability >= constraint_level::nontrivial) {
+      noexcept(F::minimum_relocatability >= constraint_level::nothrow)
+      requires(F::minimum_relocatability >= constraint_level::nontrivial) {
     if (meta_ != nullptr) {
       if (rhs.meta_ != nullptr) {
-        alignas(F::pointer_max_alignment) char temp[F::pointer_max_size];
-        if constexpr (F::pointer_relocatability == constraint_level::trivial) {
-          memcpy(temp, ptr_, F::pointer_max_size);
-          memcpy(ptr_, rhs.ptr_, F::pointer_max_size);
-          memcpy(rhs.ptr_, temp, F::pointer_max_size);
+        if constexpr (F::minimum_relocatability == constraint_level::trivial) {
+          std::swap(ptr_, rhs.ptr);
         } else {
+          alignas(F::maximum_alignment) char temp[F::maximum_size];
           meta_->relocate(temp, ptr_);
           rhs.meta_->relocate(ptr_, rhs.ptr_);
           meta_->relocate(rhs.ptr_, temp);
         }
       } else {
-        if constexpr (F::pointer_relocatability == constraint_level::trivial) {
-          memcpy(rhs.ptr_, ptr_, F::pointer_max_size);
+        if constexpr (F::minimum_relocatability == constraint_level::trivial) {
+          memcpy(rhs.ptr_, ptr_, F::maximum_size);
         } else {
           meta_->relocate(rhs.ptr_, ptr_);
         }
       }
     } else if (rhs.meta_ != nullptr) {
-      if constexpr (F::pointer_relocatability == constraint_level::trivial) {
-        memcpy(ptr_, rhs.ptr_, F::pointer_max_size);
+      if constexpr (F::minimum_relocatability == constraint_level::trivial) {
+        memcpy(ptr_, rhs.ptr_, F::maximum_size);
       } else {
         rhs.meta_->relocate(ptr_, rhs.ptr_);
       }
@@ -345,15 +419,30 @@ class proxy {
   }
   template <class P, class... Args>
   P& emplace(Args&&... args) noexcept(is_nothrow_constructible_v<P, Args...> &&
-          F::pointer_relocatability >= constraint_level::nothrow &&
-          F::pointer_destructibility >= constraint_level::nothrow)
-      requires(proxiable<P, F> &&
-          F::pointer_destructibility >= constraint_level::nontrivial) {
-    reset();
-    proxy temp{in_place_type<P>, forward<Args>(args)...};
-    swap(temp);
+          F::minimum_destructibility >= constraint_level::nothrow)
+      requires(proxiable<P, F> && is_constructible_v<P, Args...> &&
+          F::minimum_relocatability >= constraint_level::nontrivial &&
+          F::minimum_destructibility >= constraint_level::nontrivial) {
+    if constexpr (is_nothrow_constructible_v<P, Args...> &&
+        F::minimum_destructibility >= constraint_level::nothrow) {
+      this->~proxy();
+      new(this) proxy(in_place_type<P>, forward<Args>(args)...);
+    } else {
+      reset();
+      proxy temp{in_place_type<P>, forward<Args>(args)...};
+      swap(temp);
+    }
     return *reinterpret_cast<P*>(ptr_);
   }
+  template <class P, class U, class... Args>
+  P& emplace(initializer_list<U> il, Args&&... args)
+      noexcept(is_nothrow_constructible_v<P, initializer_list<U>&, Args...> &&
+          F::minimum_destructibility >= constraint_level::nothrow)
+      requires(proxiable<P, F> &&
+          is_constructible_v<P, initializer_list<U>&, Args...> &&
+          F::minimum_relocatability >= constraint_level::nontrivial &&
+          F::minimum_destructibility >= constraint_level::nontrivial)
+      { return emplace<P>(il, forward<Args>(args)...); }
   template <class P>
   P& cast() requires proxiable<P, F> {
     if (type() != typeid(P)) {
@@ -361,17 +450,19 @@ class proxy {
     }
     return *reinterpret_cast<P*>(ptr_);
   }
-  template <class O, class... Args>
+  template <class O = typename basic_traits::default_op, class... Args>
   decltype(auto) invoke(Args&&... args)
-      requires (detail::facade_traits<F>::template has_operation<O> &&
+      requires (detail::dependent_t<traits, O>::applicable &&
+          basic_traits::template has_op<O> &&
           is_convertible_v<tuple<Args...>, typename O::argument_types>) {
-    return get<detail::facade_traits<F>::template operation_index<O>>(
-        meta_->op_functions)(ptr_, forward<Args>(args)...);
+    return get<basic_traits::template op_index<O>>(
+        static_cast<const typename traits::meta_type*>(meta_)->op_functions)(
+        ptr_, forward<Args>(args)...);
   }
 
  private:
-  const typename detail::facade_traits<F>::meta_type* meta_;
-  alignas(F::pointer_max_alignment) char ptr_[F::pointer_max_size];
+  const typename basic_traits::meta_type* meta_;
+  alignas(F::maximum_alignment) char ptr_[F::maximum_size];
 };
 
 namespace detail {
@@ -424,6 +515,12 @@ proxy<F> make_proxy(initializer_list<U> il, Args&&... args)
 template <class F, class T>
 proxy<F> make_proxy(T&& value)
     { return make_proxy<F, decay_t<T>>(forward<T>(value)); }
+
+template <class F>
+void swap(std::proxy<F>& a, std::proxy<F>& b)
+    noexcept(F::minimum_relocatability >= constraint_level::nothrow)
+    requires(F::minimum_relocatability >= constraint_level::nontrivial)
+    { a.swap(b); }
 
 }  // namespace std
 

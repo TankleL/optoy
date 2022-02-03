@@ -12,23 +12,23 @@ struct pixel_t {
     channel_t r, g, b, a;
 };
 
-struct width_f : std::facade_operation<
+struct width_f : std::facade_expr<
     coord_t(),
     [](const auto& self) { return self.width(); }> {};
 
-struct height_f : std::facade_operation<
+struct height_f : std::facade_expr<
     coord_t(),
     [](const auto& self) { return self.height(); }> {};
 
-struct rawdata_f : std::facade_operation<
+struct rawdata_f : std::facade_expr<
     const channel_t*(),
     [](const auto& self) { return self.raw_data(); }> {};
 
-struct pixel_get_f : std::facade_operation<
+struct pixel_get_f : std::facade_expr<
     const pixel_t&(coord_t, coord_t),
     [](const auto& self, coord_t x, coord_t y) { return self.get(x, y); }> {};
 
-struct pixel_set_f : std::facade_operation<
+struct pixel_set_f : std::facade_expr<
     void(coord_t, coord_t, const pixel_t&),
     [](auto& self, coord_t x, coord_t y, const pixel_t& p) { return self.set(x, y, p); }> {};
 
