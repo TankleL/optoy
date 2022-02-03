@@ -92,29 +92,29 @@ template <class T, class U, class... Us> requires (!is_same_v<T, U>)
 struct index_traits<T, U, Us...>
     : integral_constant<size_t, index_traits<T, Us...>::value + 1u> {};
 
-template <class O, class Args>
-struct facade_operation_traits_impl : inapplicable_traits {};
-template <class O, class... Args>
-struct facade_operation_traits_impl<O, tuple<Args...>> : applicable_traits {
-  using function_type = typename O::return_type (*)(char*, Args...);
+template <class E, class Args>
+struct facade_expr_traits_impl : inapplicable_traits {};
+template <class E, class... Args>
+struct facade_expr_traits_impl<E, tuple<Args...>> : applicable_traits {
+  using function_type = typename E::return_type (*)(char*, Args...);
 
   template <class T>
-  static constexpr bool applicable_operand = requires(T operand, Args... args)
-      { { O::invoker(forward<T>(operand), forward<Args>(args)...) }; };
+  static constexpr bool applicable_operand =
+      is_invocable_v<decltype(E::invoker), T, Args...>;
   template <class P>
-  static typename O::return_type invoke(char* p, Args... args)
-      { return O::invoker(**reinterpret_cast<P*>(p), forward<Args>(args)...); }
+  static typename E::return_type invoke(char* p, Args... args)
+      { return E::invoker(**reinterpret_cast<P*>(p), forward<Args>(args)...); }
 };
 
-template <class O>
-struct facade_operation_traits : inapplicable_traits {};
-template <class O> requires requires {
-      typename O::return_type;
-      typename O::argument_types;
-      { O::invoker };
+template <class E>
+struct facade_expr_traits : inapplicable_traits {};
+template <class E> requires requires {
+      typename E::return_type;
+      typename E::argument_types;
+      { E::invoker };
     }
-struct facade_operation_traits<O>
-    : facade_operation_traits_impl<O, typename O::argument_types> {};
+struct facade_expr_traits<E>
+    : facade_expr_traits_impl<E, typename E::argument_types> {};
 
 struct type_info_meta {
   template <class P>
@@ -123,12 +123,12 @@ struct type_info_meta {
   const type_info& type;
 };
 template <class... Es>
-struct facade_operation_meta {
+struct facade_expr_meta {
   template <class P>
-  constexpr explicit facade_operation_meta(in_place_type_t<P>)
-      : op_functions(facade_operation_traits<Es>::template invoke<P>...) {}
+  constexpr explicit facade_expr_meta(in_place_type_t<P>)
+      : expr_functions(facade_expr_traits<Es>::template invoke<P>...) {}
 
-  tuple<typename facade_operation_traits<Es>::function_type...> op_functions;
+  tuple<typename facade_expr_traits<Es>::function_type...> expr_functions;
 };
 struct copy_meta {
   template <class P>
@@ -207,12 +207,13 @@ struct basic_facade_traits_impl<F, tuple<Es...>> : applicable_traits {
       conditional_meta_tag<F::minimum_relocatability, relocation_meta>,
       conditional_meta_tag<F::minimum_destructibility, destruction_meta>,
       type_info_meta>::type;
-  using default_op = conditional_t<
+  using default_expr = conditional_t<
       sizeof...(Es) == 1u, tuple_element_t<0u, tuple<Es...>>, void>;
 
-  template <class O> static constexpr size_t op_index =
-      index_traits<O, Es...>::value;
-  template <class O> static constexpr bool has_op = op_index<O> < sizeof...(Es);
+  template <class E> static constexpr size_t expr_index =
+      index_traits<E, Es...>::value;
+  template <class E> static constexpr bool has_expr =
+      expr_index<E> < sizeof...(Es);
 };
 template <class F> struct basic_facade_traits : inapplicable_traits {};
 template <class F> requires requires {
@@ -229,10 +230,10 @@ struct basic_facade_traits<F> : basic_facade_traits_impl<
 template <class F, class Es>
 struct facade_traits_impl : inapplicable_traits {};
 template <class F, class... Es>
-    requires (facade_operation_traits<Es>::applicable && ...)
+    requires (facade_expr_traits<Es>::applicable && ...)
 struct facade_traits_impl<F, tuple<Es...>> : applicable_traits {
   using meta_type = facade_meta<
-      typename basic_facade_traits<F>::meta_type, facade_operation_meta<Es...>>;
+      typename basic_facade_traits<F>::meta_type, facade_expr_meta<Es...>>;
 
   template <class P>
   static constexpr bool applicable_pointer =
@@ -240,7 +241,7 @@ struct facade_traits_impl<F, tuple<Es...>> : applicable_traits {
       has_copyability<P>(F::minimum_copyability) &&
       has_relocatability<P>(F::minimum_relocatability) &&
       has_destructibility<P>(F::minimum_destructibility) &&
-      (facade_operation_traits<Es>::template applicable_operand<
+      (facade_expr_traits<Es>::template applicable_operand<
           typename pointer_traits<P>::value_type> && ...);
   template <class P> static constexpr meta_type meta{in_place_type<P>};
 };
@@ -450,13 +451,13 @@ class proxy {
     }
     return *reinterpret_cast<P*>(ptr_);
   }
-  template <class O = typename basic_traits::default_op, class... Args>
+  template <class E = typename basic_traits::default_expr, class... Args>
   decltype(auto) invoke(Args&&... args)
-      requires (detail::dependent_t<traits, O>::applicable &&
-          basic_traits::template has_op<O> &&
-          is_convertible_v<tuple<Args...>, typename O::argument_types>) {
-    return get<basic_traits::template op_index<O>>(
-        static_cast<const typename traits::meta_type*>(meta_)->op_functions)(
+      requires (detail::dependent_t<traits, E>::applicable &&
+          basic_traits::template has_expr<E> &&
+          is_convertible_v<tuple<Args...>, typename E::argument_types>) {
+    return get<basic_traits::template expr_index<E>>(
+        static_cast<const typename traits::meta_type*>(meta_)->expr_functions)(
         ptr_, forward<Args>(args)...);
   }
 
