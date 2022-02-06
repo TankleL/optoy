@@ -36,7 +36,7 @@ struct model_transformation_f : std::facade_expr<
     [](auto& self) { return self.model_transformation(); }> {};
 
 struct interface_t : std::facade<
-    scene_node::interface_t::operations,
+    scene_node::interface_t::expressions,
     model_transformation_f> {};
 } // namespace position_scene_node
 
