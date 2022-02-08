@@ -13,7 +13,7 @@ namespace detail::async {
 template<class>
 struct execute_f;
 template<class R, class... Args>
-struct execute_f<R(Args...)> : std::facade_operation<
+struct execute_f<R(Args...)> : std::facade_expr<
     R(Args...),
     [](const auto& self, Args...) { self(std::forward<Args>...); }> {};
 template<class T>

@@ -8,7 +8,7 @@
 namespace optoy {
 namespace shape {
     template<class TScalar>
-    struct intersect_f : std::facade_operation<
+    struct intersect_f : std::facade_expr<
         bool(surface_interaction_t<TScalar>&, TScalar&, const ray_t<TScalar>&),
         [](const auto& self, surface_interaction_t<TScalar>& arg0, TScalar& arg1, const ray_t<TScalar>& arg2) {
             return self.intersect(arg0, arg1, arg2); }> {};

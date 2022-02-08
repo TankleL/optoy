@@ -8,13 +8,13 @@ namespace optoy::camera {
 
 // x and y are within the range of [-0.5, +0.5]
 template<class TScalar>
-struct generate_ray_f : std::facade_operation<
+struct generate_ray_f : std::facade_expr<
     ray_t<TScalar>(TScalar, TScalar),
     [](const auto& self, auto x, auto y) { return self.generate_ray(x, y); }> {};
 
 // x and y are within the range of [-0.5, +0.5]
 template<class TScalar>
-struct generate_ray_without_bias_f : std::facade_operation<
+struct generate_ray_without_bias_f : std::facade_expr<
     ray_t<TScalar>(TScalar, TScalar),
     [](const auto& self, auto x, auto y) { return self.generate_ray_without_bias(x, y); }> {};
 
